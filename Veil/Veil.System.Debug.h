@@ -18,6 +18,8 @@
 #pragma warning(push)
 // nonstandard extension used : nameless struct/union
 #pragma warning(disable:4201)
+// nonstandard extension used : bit field types other than int
+#pragma warning(disable:4214)
 // 'struct_name' : structure was padded due to __declspec(align())
 #pragma warning(disable:4324)
 // 'enumeration': a forward declaration of an unscoped enumeration must have an
@@ -289,8 +291,9 @@ typedef struct _SYSDBG_LIVEDUMP_SELECTIVE_CONTROL
     ULONGLONG Reserved[4];
 } SYSDBG_LIVEDUMP_SELECTIVE_CONTROL, * PSYSDBG_LIVEDUMP_SELECTIVE_CONTROL;
 
-#define SYSDBG_LIVEDUMP_CONTROL_VERSION 1
-#define SYSDBG_LIVEDUMP_CONTROL_VERSION_WIN11 2
+#define SYSDBG_LIVEDUMP_CONTROL_VERSION_1 1
+#define SYSDBG_LIVEDUMP_CONTROL_VERSION_2 2
+#define SYSDBG_LIVEDUMP_CONTROL_VERSION SYSDBG_LIVEDUMP_CONTROL_VERSION_2
 
 // private
 typedef struct _SYSDBG_LIVEDUMP_CONTROL
@@ -307,9 +310,6 @@ typedef struct _SYSDBG_LIVEDUMP_CONTROL
     SYSDBG_LIVEDUMP_CONTROL_ADDPAGES AddPagesControl;
     PSYSDBG_LIVEDUMP_SELECTIVE_CONTROL SelectiveControl; // since WIN11
 } SYSDBG_LIVEDUMP_CONTROL, * PSYSDBG_LIVEDUMP_CONTROL;
-
-#define SYSDBG_LIVEDUMP_CONTROL_SIZE RTL_SIZEOF_THROUGH_FIELD(SYSDBG_LIVEDUMP_CONTROL, AddPagesControl)
-#define SYSDBG_LIVEDUMP_CONTROL_SIZE_WIN11 sizeof(SYSDBG_LIVEDUMP_CONTROL)
 
 // private
 typedef struct _SYSDBG_KD_PULL_REMOTE_FILE

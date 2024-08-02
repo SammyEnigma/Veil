@@ -15,6 +15,8 @@
 #pragma warning(push)
 // nonstandard extension used : nameless struct/union
 #pragma warning(disable:4201)
+// nonstandard extension used : bit field types other than int
+#pragma warning(disable:4214)
 // 'struct_name' : structure was padded due to __declspec(align())
 #pragma warning(disable:4324)
 // 'enumeration': a forward declaration of an unscoped enumeration must have an
@@ -82,6 +84,7 @@ typedef struct _PORT_DATA_INFORMATION
 #define LPC_DEBUG_EVENT 8
 #define LPC_ERROR_EVENT 9
 #define LPC_CONNECTION_REQUEST 10
+#define LPC_CONTINUATION_REQUIRED 0x2000
 
 #define LPC_KERNELMODE_MESSAGE  (CSHORT)0x8000
 #define LPC_NO_IMPERSONATE      (CSHORT)0x4000

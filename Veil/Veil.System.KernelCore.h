@@ -15,6 +15,8 @@
 #pragma warning(push)
 // nonstandard extension used : nameless struct/union
 #pragma warning(disable:4201)
+// nonstandard extension used : bit field types other than int
+#pragma warning(disable:4214)
 // 'struct_name' : structure was padded due to __declspec(align())
 #pragma warning(disable:4324)
 // 'enumeration': a forward declaration of an unscoped enumeration must have an
@@ -132,6 +134,7 @@ typedef enum _KWAIT_REASON
     WrPhysicalFault,
     WrIoRing,
     WrMdlCache,
+    WrRcu,
     MaximumWaitReason
 } KWAIT_REASON, * PKWAIT_REASON;
 
@@ -370,6 +373,51 @@ _VEIL_DEFINE_IAT_SYMBOL(KeInitializeSpinLock, _VEIL_IMPL_KeInitializeSpinLock);
 
 #endif // KeInitializeSpinLock
 #endif
+
+#if defined(_AMD64_) && !defined(MIDL_PASS)
+
+// Fix: unresolved external symbol 'KeGetCurrentIrql'
+_IRQL_requires_max_(HIGH_LEVEL)
+_IRQL_saves_
+inline
+KIRQL
+_VEIL_IMPL_KeGetCurrentIrql(
+    VOID
+)
+
+/*++
+
+Routine Description:
+
+    This function return the current IRQL.
+
+Arguments:
+
+    None.
+
+Return Value:
+
+    The current IRQL is returned as the function value.
+
+--*/
+
+{
+
+#if !defined(_ARM64EC_)
+
+    return (KIRQL)ReadCR8();
+
+#else
+
+    return 0;  // ARM64EC_STUB
+
+#endif // !defined(_ARM64EC_)
+
+}
+
+_VEIL_DEFINE_IAT_SYMBOL(KeGetCurrentIrql, _VEIL_IMPL_KeGetCurrentIrql);
+#endif // if defined(_AMD64_) && !defined(MIDL_PASS)
+
 
 #endif // _KERNEL_MODE
 

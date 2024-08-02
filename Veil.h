@@ -72,21 +72,6 @@
         _VEIL_DECLARE_ALTERNATE_NAME_PREFIX_DATA #alternate_name    \
         ))
 
-// Fix: __imp_ is optimized away
-#ifdef __cplusplus
-#define _VEIL_FORCE_INCLUDE(name) \
-    extern"C" __declspec(selectany) void const* const _VEIL_CONCATENATE(__forceinclude_, name) = reinterpret_cast<void const*>(&name)
-
-#define _VEIL_FORCE_INCLUDE_RAW_SYMBOLS(name) \
-    extern"C" __declspec(selectany) void const* const __identifier(_VEIL_STRINGIZE(_VEIL_CONCATENATE(__forceinclude_, name))) \
-        = reinterpret_cast<void const*>(&__identifier(_VEIL_STRINGIZE(name)))
-#else
-#define _VEIL_FORCE_INCLUDE(name) \
-    extern __declspec(selectany) void const* const _VEIL_CONCATENATE(__forceinclude_, name) = (void const*)(&name)
-
-#define _VEIL_FORCE_INCLUDE_RAW_SYMBOLS(name)
-#endif
-
 // The _VEIL_DEFINE_IAT_SYMBOL macro provides an architecture-neutral way of
 // defining IAT symbols (__imp_- or _imp__-prefixed symbols).
 #ifdef _M_IX86
@@ -98,19 +83,16 @@
 #ifdef __cplusplus
 #define _VEIL_DEFINE_IAT_SYMBOL(sym, fun) \
     extern "C" __declspec(selectany) void const* const _VEIL_DEFINE_IAT_SYMBOL_MAKE_NAME(sym) \
-        = reinterpret_cast<void const*>(fun); \
-    _VEIL_FORCE_INCLUDE(_VEIL_DEFINE_IAT_SYMBOL_MAKE_NAME(sym))
+        = reinterpret_cast<void const*>(fun);
 
 #define _VEIL_DEFINE_IAT_RAW_SYMBOL(sym, fun) \
     __pragma(warning(suppress:4483)) \
     extern "C" __declspec(selectany) void const* const __identifier(_VEIL_STRINGIZE(_VEIL_DEFINE_IAT_SYMBOL_MAKE_NAME(sym))) \
-        = reinterpret_cast<void const*>(fun); \
-    _VEIL_FORCE_INCLUDE_RAW_SYMBOLS(_VEIL_DEFINE_IAT_SYMBOL_MAKE_NAME(sym))
+        = reinterpret_cast<void const*>(fun);
 
 #else
 #define _VEIL_DEFINE_IAT_SYMBOL(sym, fun) \
-    extern __declspec(selectany) void const* const _VEIL_DEFINE_IAT_SYMBOL_MAKE_NAME(sym) = (void const*)(fun); \
-    _VEIL_FORCE_INCLUDE(_VEIL_DEFINE_IAT_SYMBOL_MAKE_NAME(sym))
+    extern __declspec(selectany) void const* const _VEIL_DEFINE_IAT_SYMBOL_MAKE_NAME(sym) = (void const*)(fun);
 
 // C don't support __identifier keyword
 #define _VEIL_DEFINE_IAT_RAW_SYMBOL(sym, fun)
@@ -191,12 +173,17 @@
 #define NTDDI_WIN10_FE                      0x0A00000A      // Windows 10.0.19043 / 21H1 / Ferrum
 #define NTDDI_WIN10_CO                      0x0A00000B      // Windows 10.0.19044 / 21H2 / Cobalt
                                                             // Windows 10.0.19045 / 22H2
-#define NTDDI_WIN11_CO                      NTDDI_WIN10_CO  // Windows 10.0.22000 / 21H2 / Cobalt
-#define NTDDI_WIN11                         NTDDI_WIN11_CO
-#define NTDDI_WIN10_NI                      0x0A00000C      // Windows 10.0.22621 / 22H2 / Nickel
-#define NTDDI_WIN11_NI                      NTDDI_WIN10_NI  // Windows 10.0.22621 / 22H2 / Nickel
-#define NTDDI_WIN10_CU                      0x0A00000D      // Windows 10.0.22631 / 22H2 / Copper
-#define NTDDI_WIN11_CU                      NTDDI_WIN10_CU  // Windows 10.0.22631 / 23H2 / Copper
+#define NTDDI_WIN10_NI                      0x0A00000C
+#define NTDDI_WIN10_CU                      0x0A00000D
+
+// https://archive.org/search?query=subject%3A%22Windows+11%22
+#define NTDDI_WIN11                         NTDDI_WIN10_CO
+#define NTDDI_WIN11_CO                      NTDDI_WIN10_CO  // Windows 10.0.21277-22000  / Cobalt       / 21H2
+#define NTDDI_WIN11_NI                      NTDDI_WIN10_NI  // Windows 10.0.22449-22631  / Nickel       / 22H2 23H2
+#define NTDDI_WIN11_CU                      NTDDI_WIN10_CU  // Windows 10.0.25057-25236  / Copper
+#define NTDDI_WIN11_ZN                      0x0A00000E      // Windows 10.0.25246-25398  / Zinc
+#define NTDDI_WIN11_GA                      0x0A00000F      // Windows 10.0.25905-25941  / Gallium
+#define NTDDI_WIN11_GE                      0x0A000010      // Windows 10.0.25947-26100  / Germanium    / 24H2
 
  // Fix WDK
 #define NTDDI_THRESHOLD                     NTDDI_WINTHRESHOLD
@@ -301,5 +288,7 @@ struct IUnknown;
 #include "Veil/Veil.System.TransactionManager.h"
 #include "Veil/Veil.System.VDM.h"
 #include "Veil/Veil.System.Prefetcher.h"
+#include "Veil/Veil.System.WindowStation.h"
+#include "Veil/Veil.System.UserManagerService.h"
 
 #endif // _VEIL_

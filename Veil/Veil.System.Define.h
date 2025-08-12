@@ -139,7 +139,7 @@ VEIL_BEGIN()
 #undef STATIC_ASSERT
 
 #if __cplusplus
-#if _MSVC_LANG < 201402L
+#if _MSVC_LANG <= 201402L
 #define STATIC_ASSERT(expr, ...) typedef char __static_assert_t[ (expr) ]
 #else
 #define STATIC_ASSERT(expr, ...) static_assert((expr), __VA_ARGS__)

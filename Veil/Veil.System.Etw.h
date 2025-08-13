@@ -267,7 +267,7 @@ typedef struct _WMI_TRACE_PACKET
     } DUMMYUNIONNAME;
 } WMI_TRACE_PACKET, * PWMI_TRACE_PACKET;
 
-static_assert(sizeof(WMI_TRACE_PACKET) == sizeof(ULONG), "WMI_TRACE_PACKET must equal sizeof(ULONG)");
+STATIC_ASSERT(sizeof(WMI_TRACE_PACKET) == sizeof(ULONG), "WMI_TRACE_PACKET must equal sizeof(ULONG)");
 
 // New struct that replaces EVENT_INSTANCE_GUID_HEADER. It is basically
 // EVENT_TRACE_HEADER + 2 Guids.
@@ -402,7 +402,7 @@ typedef struct _WMI_TRACE_MESSAGE_PACKET
     USHORT  OptionFlags;                   // Flags associated with the message
 } WMI_TRACE_MESSAGE_PACKET, * PWMI_TRACE_MESSAGE_PACKET;
 
-static_assert(sizeof(WMI_TRACE_MESSAGE_PACKET) == sizeof(ULONG), "WMI_TRACE_MESSAGE_PACKET must equal sizeof(ULONG)");
+STATIC_ASSERT(sizeof(WMI_TRACE_MESSAGE_PACKET) == sizeof(ULONG), "WMI_TRACE_MESSAGE_PACKET must equal sizeof(ULONG)");
 
 typedef struct _MESSAGE_TRACE_HEADER
 {
@@ -542,7 +542,7 @@ typedef struct _WMI_BUFFER_HEADER
     } DUMMYUNIONNAME2;
 } WMI_BUFFER_HEADER, * PWMI_BUFFER_HEADER;
 
-static_assert(sizeof(WMI_BUFFER_HEADER) == 0x48, "WMI_BUFFER_HEADER must equal 0x48");
+STATIC_ASSERT(sizeof(WMI_BUFFER_HEADER) == 0x48, "WMI_BUFFER_HEADER must equal 0x48");
 STATIC_ASSERT(FIELD_OFFSET(WMI_BUFFER_HEADER, BufferSize) == 0x0);
 STATIC_ASSERT(FIELD_OFFSET(WMI_BUFFER_HEADER, SavedOffset) == 0x4);
 STATIC_ASSERT(FIELD_OFFSET(WMI_BUFFER_HEADER, CurrentOffset) == 0x8);

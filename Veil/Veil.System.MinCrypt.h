@@ -391,7 +391,7 @@ CiFreePolicyInfo(
 *  Given a file digest and signature of a file, verify the signature and provide information regarding
 *  the certificates that was used for signing (the entire certificate chain)
 *
-*  @note   must be attached to the PsInitialSystemProcess first!
+*  \note   must be attached to the PsInitialSystemProcess first!
 *
 *  \param  Hash - buffer containing the digest
 *
@@ -436,7 +436,7 @@ CiCheckSignedFile(
 *
 *  Checks if the SHA-1 message digest is contained within a verified system catalog
 *
-*  @note   must be attached to the PsInitialSystemProcess first!
+*  \note   must be attached to the PsInitialSystemProcess first!
 *
 *  \param  Hash - buffer containing the digest
 *

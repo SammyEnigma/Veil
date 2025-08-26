@@ -64,6 +64,7 @@ typedef enum _OBJECT_INFORMATION_CLASS
     ObjectHandleFlagInformation, // qs: OBJECT_HANDLE_FLAG_INFORMATION
     ObjectSessionInformation, // s: void // change object session // (requires SeTcbPrivilege)
     ObjectSessionObjectInformation, // s: void // change object session // (requires SeTcbPrivilege)
+    ObjectSetRefTraceInformation, // since 25H2
     MaxObjectInfoClass
 } OBJECT_INFORMATION_CLASS;
 #else
@@ -74,6 +75,8 @@ typedef enum _OBJECT_INFORMATION_CLASS
 #define ObjectHandleFlagInformation     ((_OBJECT_INFORMATION_CLASS)4)
 #define ObjectSessionInformation        ((_OBJECT_INFORMATION_CLASS)5)
 #define ObjectSessionObjectInformation  ((_OBJECT_INFORMATION_CLASS)6)
+#define ObjectSetRefTraceInformation    ((_OBJECT_INFORMATION_CLASS)7)
+#define MaxObjectInfoClass              ((_OBJECT_INFORMATION_CLASS)8)
 #endif // !_KERNEL_MODE
 
 /**

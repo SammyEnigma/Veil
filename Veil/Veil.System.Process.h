@@ -105,8 +105,11 @@ VOID NTAPI PS_POST_PROCESS_INIT_ROUTINE(
 );
 typedef PS_POST_PROCESS_INIT_ROUTINE* PPS_POST_PROCESS_INIT_ROUTINE;
 
+#ifndef RTL_FLS_MAXIMUM_AVAILABLE
+#define RTL_FLS_MAXIMUM_AVAILABLE 128
+#endif
 #ifndef FLS_MAXIMUM_AVAILABLE
-#define FLS_MAXIMUM_AVAILABLE 128
+#define FLS_MAXIMUM_AVAILABLE 4080  // since 1903
 #endif
 #ifndef TLS_MINIMUM_AVAILABLE
 #define TLS_MINIMUM_AVAILABLE 64
@@ -187,6 +190,7 @@ typedef struct _RTL_CRITICAL_SECTION* PRTL_CRITICAL_SECTION;
 #define KACF_OLEAUT32ENABLEUNSAFELOADTYPELIBRELATIVE    0x00800000
 #define KACF_ALLOWMAXIMIZEDWINDOWGAMMA                  0x01000000
 #define KACF_DONOTADDTOCACHE                            0x80000000
+#define KACF_DISABLEPOSIXDELETEFILE                  0x100000000 // rev KernelBase!InternalDeleteFileW
 
 // private
 #define API_SET_SECTION_NAME ".apiset"
@@ -429,6 +433,142 @@ typedef struct _WER_PEB_HEADER_BLOCK
     PVOID Reserved;
 } WER_PEB_HEADER_BLOCK, * PWER_PEB_HEADER_BLOCK;
 
+//
+// AppCompat
+//
+
+typedef struct tagSDBQUERYRESULT
+{
+    ULONG Exes[16];
+    ULONG ExeFlags[16];
+    ULONG Layers[8];
+    ULONG LayerFlags;
+    ULONG AppHelp;
+    ULONG ExeCount;
+    ULONG LayerCount;
+    GUID  ID;
+    ULONG ExtraFlags;
+    ULONG CustomSDBMap;
+    GUID  DB[16];
+} SDBQUERYRESULT, *PSDBQUERYRESULT;
+
+STATIC_ASSERT(sizeof(SDBQUERYRESULT) == 0x1c8, "SDBQUERYRESULT size mismatch");
+
+typedef struct tagSWITCH_CONTEXT_ATTRIBUTE
+{
+    ULONG_PTR ContextUpdateCounter;
+    BOOL      AllowContextUpdate;
+    BOOL      EnableTrace;
+    HANDLE    EtwHandle;
+} SWITCH_CONTEXT_ATTRIBUTE, *PSWITCH_CONTEXT_ATTRIBUTE;
+
+#ifdef _WIN64
+STATIC_ASSERT(sizeof(SWITCH_CONTEXT_ATTRIBUTE) == 0x18, "SWITCH_CONTEXT_ATTRIBUTE size mismatch");
+#else
+STATIC_ASSERT(sizeof(SWITCH_CONTEXT_ATTRIBUTE) == 0x10, "SWITCH_CONTEXT_ATTRIBUTE size mismatch");
+#endif
+
+typedef struct tagSWITCH_CONTEXT_DATA
+{
+    ULONGLONG OsMaxVersionTested;
+    ULONG     TargetPlatform;
+    ULONGLONG ContextMinimum;
+    GUID      Platform;
+    GUID      MinPlatform;
+    ULONG     ContextSource;
+    ULONG     ElementCount;
+    GUID      Elements[48];
+} SWITCH_CONTEXT_DATA, *PSWITCH_CONTEXT_DATA;
+
+STATIC_ASSERT(sizeof(SWITCH_CONTEXT_DATA) == 0x340, "SWITCH_CONTEXT_DATA size mismatch");
+
+typedef struct tagSWITCH_CONTEXT
+{
+    SWITCH_CONTEXT_ATTRIBUTE Attribute;
+    SWITCH_CONTEXT_DATA      Data;
+} SWITCH_CONTEXT, *PSWITCH_CONTEXT;
+
+#ifdef _WIN64
+STATIC_ASSERT(sizeof(SWITCH_CONTEXT) == 0x358, "SWITCH_CONTEXT size mismatch");
+#else
+STATIC_ASSERT(sizeof(SWITCH_CONTEXT) == 0x350, "SWITCH_CONTEXT size mismatch");
+#endif
+
+typedef struct _SDB_CSTRUCT_COBALT_PROCFLAG
+{
+    KAFFINITY AffinityMask;
+    ULONG     CPUIDEcxOverride;
+    ULONG     CPUIDEdxOverride;
+    USHORT    ProcessorGroup;
+    USHORT    FastSelfModThreshold;
+    USHORT    Reserved1;
+    UCHAR     Reserved2;
+    UCHAR     BackgroundWork          : 5;
+    UCHAR     CPUIDBrand              : 4;
+    UCHAR     Reserved3               : 4;
+    UCHAR     RdtscScaling            : 3;
+    UCHAR     Reserved4               : 2;
+    UCHAR     UnalignedAtomicApproach : 2;
+    UCHAR     Win11Atomics            : 2;
+    UCHAR     RunOnSingleCore         : 1;
+    UCHAR     X64CPUID                : 1;
+    UCHAR     PatchUnaligned          : 1;
+    UCHAR     InterpreterOrJitter     : 1;
+    UCHAR     ForceSegmentHeap        : 1;
+    UCHAR     Reserved5               : 1;
+    UCHAR     Reserved6               : 1;
+
+    union
+    {
+        ULONGLONG                            Group1AsUINT64;
+        struct _SDB_CSTRUCT_COBALT_PROCFLAG* Specified;
+    };
+} SDB_CSTRUCT_COBALT_PROCFLAG, *PSDB_CSTRUCT_COBALT_PROCFLAG;
+
+#ifdef _WIN64
+STATIC_ASSERT(sizeof(SDB_CSTRUCT_COBALT_PROCFLAG) == 0x28, "SDB_CSTRUCT_COBALT_PROCFLAG size mismatch");
+#else
+STATIC_ASSERT(sizeof(SDB_CSTRUCT_COBALT_PROCFLAG) == 0x20, "SDB_CSTRUCT_COBALT_PROCFLAG size mismatch");
+#endif
+
+typedef struct _APPCOMPAT_EXE_DATA
+{
+    ULONG_PTR                   Reserved[65];
+    ULONG                       Size;
+    ULONG                       Magic;
+    BOOL                        LoadShimEngine;
+    USHORT                      ExeType;
+    SDBQUERYRESULT              SdbQueryResult;
+    ULONG_PTR                   DbgLogChannels[128];
+    SWITCH_CONTEXT              SwitchContext;
+    ULONG                       ParentProcessId;
+    WCHAR                       ParentImageName[260];
+    WCHAR                       ParentCompatLayers[256];
+    WCHAR                       ActiveCompatLayers[256];
+    ULONG                       ImageFileSize;
+    ULONG                       ImageCheckSum;
+    BOOL                        LatestOs;
+    BOOL                        PackageId;
+    BOOL                        SwitchBackManifest;
+    BOOL                        UacManifest;
+    BOOL                        LegacyInstaller;
+    ULONG                       RunLevel;
+    ULONG_PTR                   WinRTFlags;
+    PVOID                       HookCOM;
+    PVOID                       ComponentOnDemandEvent;
+    PVOID                       Quirks;
+    ULONG                       QuirksSize;
+    SDB_CSTRUCT_COBALT_PROCFLAG CobaltProcFlags;
+    ULONG                       FullMatchDbSizeCb;
+    ULONG                       FullMatchDbOffset;
+} APPCOMPAT_EXE_DATA, *PAPPCOMPAT_EXE_DATA;
+
+#ifdef _WIN64
+STATIC_ASSERT(sizeof(APPCOMPAT_EXE_DATA) == 0x11C0, "APPCOMPAT_EXE_DATA size mismatch");
+#else
+STATIC_ASSERT(sizeof(APPCOMPAT_EXE_DATA) == 0xE98, "APPCOMPAT_EXE_DATA size mismatch");
+#endif
+
 // symbols
 typedef struct _RTL_BITMAP* PRTL_BITMAP;
 
@@ -458,13 +598,13 @@ typedef struct _PEB
         BOOLEAN BitField;
         struct
         {
-            BOOLEAN ImageUsesLargePages : 1;            // The process uses large image regions (4 MB).  
+            BOOLEAN ImageUsesLargePages : 1;            // The process uses large image regions (4 MB).
             BOOLEAN IsProtectedProcess : 1;             // The process is a protected process.
-            BOOLEAN IsImageDynamicallyRelocated : 1;    // The process image base address was relocated.         
-            BOOLEAN SkipPatchingUser32Forwarders : 1;   // The process skipped forwarders for User32.dll functions. 1 for 64-bit, 0 for 32-bit.            
+            BOOLEAN IsImageDynamicallyRelocated : 1;    // The process image base address was relocated.
+            BOOLEAN SkipPatchingUser32Forwarders : 1;   // The process skipped forwarders for User32.dll functions. 1 for 64-bit, 0 for 32-bit.
             BOOLEAN IsPackagedProcess : 1;              // The process is a packaged store process (APPX/MSIX).
-            BOOLEAN IsAppContainer : 1;                 // The process has an AppContainer token.      
-            BOOLEAN IsProtectedProcessLight : 1;        // The process is a protected process (light).            
+            BOOLEAN IsAppContainerProcess : 1;          // The process has an AppContainer token.
+            BOOLEAN IsProtectedProcessLight : 1;        // The process is a protected process (light).
             BOOLEAN IsLongPathAwareProcess : 1;         // The process is long path aware.
         };
     };
@@ -801,9 +941,9 @@ typedef struct _PEB
     PVOID pShimData;
 
     //
-    // Pointer to the Application Compatibility Engine. // APPCOMPAT_EXE_DATA
+    // Pointer to the Application Compatibility Engine.
     //
-    PVOID AppCompatInfo;
+    PAPPCOMPAT_EXE_DATA AppCompatInfo;
 
     //
     // CSD version string of the operating system.
@@ -852,20 +992,12 @@ typedef struct _PEB
 
     //
     // Packaged process feature state.
-    // 
-    union
-    {
-        ULONG AppModelFeatureState;
-        struct
-        {
-            ULONG ForegroundBoostProcesses : 1;
-            ULONG AppModelFeatureStateReserved : 31;
-        };
-    };
+    //
+    ULONG AppModelFeatureState;
 
     //
     // SpareUlongs
-    // 
+    //
     ULONG SpareUlongs[2];
 
     //
@@ -1123,7 +1255,7 @@ typedef struct _PEB32
     ULARGE_INTEGER AppCompatFlags;
     ULARGE_INTEGER AppCompatFlagsUser;
     PVOID32 pShimData;
-    PVOID32 AppCompatInfo; // APPCOMPAT_EXE_DATA
+    struct _APPCOMPAT_EXE_DATA* POINTER_32 AppCompatInfo;
 
     UNICODE_STRING32 CSDVersion;
 
@@ -1294,42 +1426,41 @@ typedef struct _FLS_DATA32
 #define STATIC_UNICODE_BUFFER_LENGTH 261
 #define WIN32_CLIENT_INFO_LENGTH 62
 
-// private
-typedef enum tagOLETLSFLAGS
-{
-    OLETLS_LOCALTID                  = 0x01,    // This TID is in the current process.
-    OLETLS_UUIDINITIALIZED           = 0x02,    // This Logical thread is init'd.
-    OLETLS_INTHREADDETACH            = 0x04,    // This is in thread detach.
-    OLETLS_CHANNELTHREADINITIALZED   = 0x08,    // This channel has been init'd
-    OLETLS_WOWTHREAD                 = 0x10,    // This thread is a 16-bit WOW thread.
-    OLETLS_THREADUNINITIALIZING      = 0x20,    // This thread is in CoUninitialize.
-    OLETLS_DISABLE_OLE1DDE           = 0x40,    // This thread can't use a DDE window.
-    OLETLS_APARTMENTTHREADED         = 0x80,    // This is an STA apartment thread
-    OLETLS_MULTITHREADED             = 0x100,   // This is an MTA apartment thread
-    OLETLS_IMPERSONATING             = 0x200,   // This thread is impersonating
-    OLETLS_DISABLE_EVENTLOGGER       = 0x400,   // Prevent recursion in event logger
-    OLETLS_INNEUTRALAPT              = 0x800,   // This thread is in the NTA
-    OLETLS_DISPATCHTHREAD            = 0x1000,  // This is a dispatch thread
-    OLETLS_HOSTTHREAD                = 0x2000,  // This is a host thread
-    OLETLS_ALLOWCOINIT               = 0x4000,  // This thread allows inits
-    OLETLS_PENDINGUNINIT             = 0x8000,  // This thread has pending uninit
-    OLETLS_FIRSTMTAINIT              = 0x10000, // First thread to attempt an MTA init
-    OLETLS_FIRSTNTAINIT              = 0x20000, // First thread to attempt an NTA init
-    OLETLS_APTINITIALIZING           = 0x40000, // Apartment Object is initializing
-    OLETLS_UIMSGSINMODALLOOP         = 0x80000,
-    OLETLS_MARSHALING_ERROR_OBJECT   = 0x100000, // since WIN8
-    OLETLS_WINRT_INITIALIZE          = 0x200000, // This thread called RoInitialize
-    OLETLS_APPLICATION_STA           = 0x400000,
-    OLETLS_IN_SHUTDOWN_CALLBACKS     = 0x800000,
-    OLETLS_POINTER_INPUT_BLOCKED     = 0x1000000,
-    OLETLS_IN_ACTIVATION_FILTER      = 0x2000000, // since WINBLUE
-    OLETLS_ASTATOASTAEXEMPT_QUIRK    = 0x4000000,
-    OLETLS_ASTATOASTAEXEMPT_PROXY    = 0x8000000,
-    OLETLS_ASTATOASTAEXEMPT_INDOUBT  = 0x10000000,
-    OLETLS_DETECTED_USER_INITIALIZED = 0x20000000,  // since RS3
-    OLETLS_BRIDGE_STA                = 0x40000000,  // since RS5
-    OLETLS_NAINITIALIZING            = 0x80000000UL // since 19H1
-} OLETLSFLAGS, *POLETLSFLAGS;
+
+// OLETLSFLAGS
+#define OLETLS_LOCALTID                  0x00000001UL // This TID is in the current process.
+#define OLETLS_UUIDINITIALIZED           0x00000002UL // This Logical thread is init'd.
+#define OLETLS_INTHREADDETACH            0x00000004UL // This is in thread detach.
+#define OLETLS_CHANNELTHREADINITIALZED   0x00000008UL // This channel has been init'd
+#define OLETLS_WOWTHREAD                 0x00000010UL // This thread is a 16-bit WOW thread.
+#define OLETLS_THREADUNINITIALIZING      0x00000020UL // This thread is in CoUninitialize.
+#define OLETLS_DISABLE_OLE1DDE           0x00000040UL // This thread can't use a DDE window.
+#define OLETLS_APARTMENTTHREADED         0x00000080UL // This is an STA apartment thread
+#define OLETLS_MULTITHREADED             0x00000100UL // This is an MTA apartment thread
+#define OLETLS_IMPERSONATING             0x00000200UL // This thread is impersonating
+#define OLETLS_DISABLE_EVENTLOGGER       0x00000400UL // Prevent recursion in event logger
+#define OLETLS_INNEUTRALAPT              0x00000800UL // This thread is in the NTA
+#define OLETLS_DISPATCHTHREAD            0x00001000UL // This is a dispatch thread
+#define OLETLS_HOSTTHREAD                0x00002000UL // This is a host thread
+#define OLETLS_ALLOWCOINIT               0x00004000UL // This thread allows inits
+#define OLETLS_PENDINGUNINIT             0x00008000UL // This thread has pending uninit
+#define OLETLS_FIRSTMTAINIT              0x00010000UL // First thread to attempt an MTA init
+#define OLETLS_FIRSTNTAINIT              0x00020000UL // First thread to attempt an NTA init
+#define OLETLS_APTINITIALIZING           0x00040000UL // Apartment Object is initializing
+#define OLETLS_UIMSGSINMODALLOOP         0x00080000UL
+#define OLETLS_MARSHALING_ERROR_OBJECT   0x00100000UL // since WIN8
+#define OLETLS_WINRT_INITIALIZE          0x00200000UL // This thread called RoInitialize
+#define OLETLS_APPLICATION_STA           0x00400000UL
+#define OLETLS_IN_SHUTDOWN_CALLBACKS     0x00800000UL
+#define OLETLS_POINTER_INPUT_BLOCKED     0x01000000UL
+#define OLETLS_IN_ACTIVATION_FILTER      0x02000000UL // since WINBLUE
+#define OLETLS_ASTATOASTAEXEMPT_QUIRK    0x04000000UL
+#define OLETLS_ASTATOASTAEXEMPT_PROXY    0x08000000UL
+#define OLETLS_ASTATOASTAEXEMPT_INDOUBT  0x10000000UL
+#define OLETLS_DETECTED_USER_INITIALIZED 0x20000000UL // since RS3
+#define OLETLS_BRIDGE_STA                0x40000000UL // since RS5
+#define OLETLS_NAINITIALIZING            0x80000000UL // since 19H1
+
 
 // private
 typedef struct tagSOleTlsData
@@ -1337,7 +1468,7 @@ typedef struct tagSOleTlsData
     PVOID       ThreadBase;
     PVOID       SmAllocator;
     ULONG       ApartmentID;
-    OLETLSFLAGS Flags;
+    ULONG       Flags; // OLETLS_xxx
     LONG        TlsMapIndex;
     PVOID*      TlsSlot;
     ULONG       ComInits;
@@ -1356,7 +1487,7 @@ typedef struct tagSOleTlsData32
     PVOID32     ThreadBase;
     PVOID32     SmAllocator;
     ULONG       ApartmentID;
-    OLETLSFLAGS Flags;
+    ULONG       Flags;
     LONG        TlsMapIndex;
     PVOID32     TlsSlot; // PVOID*
     ULONG       ComInits;
@@ -1369,6 +1500,13 @@ typedef struct tagSOleTlsData32
     ULONG       TIDCaller;
     // ... (other fields are version-dependant)
 } SOleTlsData32, *PSOleTlsData32;
+
+// rev - xor key for ReservedForNtRpc
+#ifdef _WIN64
+#define RPC_THREAD_POINTER_KEY 0xABABABABDEDEDEDEui64
+#else
+#define RPC_THREAD_POINTER_KEY 0xABABABAB
+#endif
 
 /**
  * Thread Environment Block (TEB) structure.
@@ -1429,18 +1567,10 @@ typedef struct _TEB
     PVOID CsrClientThread;
 
     //
-    // Reserved.
+    // Reserved for GDI/USER (Win32k).
     //
     PVOID Win32ThreadInfo;
-
-    //
-    // Reserved.
-    //
     ULONG User32Reserved[26];
-
-    //
-    // Reserved.
-    //
     ULONG UserReserved[5];
 
     //
@@ -1496,7 +1626,7 @@ typedef struct _TEB
     BOOLEAN PlaceholderHydrationAlwaysExplicit;
 
     //
-    // Reserved.
+    // ProjFs and Cloud Files (reparse point) file virtualization.
     //
     CHAR PlaceholderReserved[10];
 
@@ -1572,7 +1702,7 @@ typedef struct _TEB
 #endif
 
     //
-    // Reserved for GDI.
+    // Reserved for GDI (Win32k).
     //
     GDI_TEB_BATCH GdiTebBatch;
     CLIENT_ID RealClientId;
@@ -1582,7 +1712,7 @@ typedef struct _TEB
     PVOID GdiThreadLocalInfo;
 
     //
-    // Reserved for User32.
+    // Reserved for User32 (Win32k).
     //
     ULONG_PTR Win32ClientInfo[WIN32_CLIENT_INFO_LENGTH];
 
@@ -1624,7 +1754,7 @@ typedef struct _TEB
     PVOID TlsSlots[TLS_MINIMUM_AVAILABLE];
 
     //
-    // Reserved.
+    // Reserved for TLS.
     //
     LIST_ENTRY TlsLinks;
 
@@ -1634,12 +1764,12 @@ typedef struct _TEB
     PVOID Vdm;
 
     //
-    // Reserved.
+    // Reserved for RPC. The pointer is XOR'ed with RPC_THREAD_POINTER_KEY.
     //
     PVOID ReservedForNtRpc;
 
     //
-    // Reserved.
+    // Reserved for Debugging (DebugActiveProcess).
     //
     PVOID DbgSsReserved[2];
 
@@ -1663,7 +1793,7 @@ typedef struct _TEB
     GUID ActivityId;
 
     //
-    // The service creating the thread (svchost).
+    // The identifier of the service that created the thread. (svchost)
     //
     PVOID SubProcessTag;
 
@@ -1714,7 +1844,7 @@ typedef struct _TEB
     PVOID ReservedForPerf;
 
     //
-    // Per-thread COM/OLE state
+    // Reserved for Object Linking and Embedding (OLE)
     //
     PSOleTlsData ReservedForOle;
 
@@ -1788,54 +1918,111 @@ typedef struct _TEB
     //
     PVOID FlsData;  // PFLS_DATA
 
+    //
+    // Pointer to the preferred languages for the current thread. (GetThreadPreferredUILanguages)
+    //
     PVOID PreferredLanguages;
+
+    //
+    // Pointer to the user-preferred languages for the current thread. (GetUserPreferredUILanguages)
+    //
     PVOID UserPrefLanguages;
+
+    //
+    // Pointer to the merged preferred languages for the current thread. (MUI_MERGE_USER_FALLBACK)
+    //
     PVOID MergedPrefLanguages;
+
+    //
+    // Indicates whether the thread is impersonating another user's language settings.
+    //
     ULONG MuiImpersonation;
 
+    //
+    // Reserved.
+    //
     union
     {
         USHORT CrossTebFlags;
         USHORT SpareCrossTebBits : 16;
     };
+
+    //
+    // SameTebFlags modify the state and behavior of the current thread.
+    //
     union
     {
         USHORT SameTebFlags;
         struct
         {
             USHORT SafeThunkCall : 1;
-            USHORT InDebugPrint : 1;
-            USHORT HasFiberData : 1;
-            USHORT SkipThreadAttach : 1;
+            USHORT InDebugPrint : 1;            // Indicates if the thread is currently in a debug print routine.
+            USHORT HasFiberData : 1;            // Indicates if the thread has local fiber-local storage (FLS).
+            USHORT SkipThreadAttach : 1;        // Indicates if the thread should suppress DLL_THREAD_ATTACH notifications.
             USHORT WerInShipAssertCode : 1;
-            USHORT RanProcessInit : 1;
-            USHORT ClonedThread : 1;
-            USHORT SuppressDebugMsg : 1;
+            USHORT RanProcessInit : 1;          // Indicates if the thread has run process initialization code.
+            USHORT ClonedThread : 1;            // Indicates if the thread is a clone of a different thread.
+            USHORT SuppressDebugMsg : 1;        // Indicates if the thread should suppress LOAD_DLL_DEBUG_INFO notifications.
             USHORT DisableUserStackWalk : 1;
             USHORT RtlExceptionAttached : 1;
-            USHORT InitialThread : 1;
+            USHORT InitialThread : 1;           // Indicates if the thread is the initial thread of the process.
             USHORT SessionAware : 1;
-            USHORT LoadOwner : 1;
+            USHORT LoadOwner : 1;               // Indicates if the thread is the owner of the process loader lock.
             USHORT LoaderWorker : 1;
             USHORT SkipLoaderInit : 1;
             USHORT SkipFileAPIBrokering : 1;
         };
     };
 
+    //
+    // Pointer to the callback function that is called when a KTM transaction scope is entered.
+    //
     PVOID TxnScopeEnterCallback;
+
+    //
+    // Pointer to the callback function that is called when a KTM transaction scope is exited.
+    //
     PVOID TxnScopeExitCallback;
+
+    //
+    // Pointer to optional context data for use by the application when a KTM transaction scope callback is called.
+    //
     PVOID TxnScopeContext;
+
+    //
+    // The lock count of critical sections for the current thread.
+    //
     ULONG LockCount;
+
+    //
+    // The offset to the WOW64 (Windows on Windows) TEB for the current thread.
+    //
     LONG WowTebOffset;
+
+    //
+    // Reserved.
+    //
     PVOID ResourceRetValue;
+
+    //
+    // Reserved for Windows Driver Framework (WDF).
+    //
     PVOID ReservedForWdf;
+
+    //
+    // Reserved for the Microsoft C runtime (CRT).
+    //
     ULONGLONG ReservedForCrt;
+
+    //
+    // The Host Compute Service (HCS) container identifier.
+    //
     GUID EffectiveContainerId;
 
     //
     // Reserved for Kernel32!Sleep (SpinWait).
     //
-    ULONGLONG LastSleepCounter; // Win11
+    ULONGLONG LastSleepCounter; // since Win11
 
     //
     // Reserved for Kernel32!Sleep (SpinWait).
@@ -1850,7 +2037,7 @@ typedef struct _TEB
     //
     // Reserved.
     //
-    PVOID SchedulerSharedDataSlot; // 24H2
+    PVOID SchedulerSharedDataSlot; // since 24H2
 
     //
     // Reserved.
@@ -1869,11 +2056,11 @@ typedef struct _TEB
 } TEB, * PTEB;
 
 #ifdef _WIN64
-//STATIC_ASSERT(sizeof(TEB) == 0x1850, "Size of TEB is incorrect"); // WIN11
-STATIC_ASSERT(sizeof(TEB) == 0x1878, "Size of TEB is incorrect"); // 24H2
+STATIC_ASSERT(FIELD_OFFSET(TEB, SchedulerSharedDataSlot) == 0x1850, "Size of TEB is incorrect"); // WIN11
+STATIC_ASSERT(sizeof(TEB) == 0x1878, "Size of TEB is incorrect");       // 24H2
 #else
-//STATIC_ASSERT(sizeof(TEB) == 0x1018, "Size of TEB is incorrect"); // WIN11
-STATIC_ASSERT(sizeof(TEB) == 0x1038, "Size of TEB is incorrect"); // 24H2
+STATIC_ASSERT(FIELD_OFFSET(TEB, SchedulerSharedDataSlot) == 0x1018, "Size of TEB is incorrect"); // WIN11
+STATIC_ASSERT(sizeof(TEB) == 0x1038, "Size of TEB is incorrect");       // 24H2
 #endif
 
 typedef struct _TEB32
@@ -2529,7 +2716,7 @@ typedef enum _PROCESSINFOCLASS
     ProcessChildProcessInformation,         // q: PROCESS_CHILD_PROCESS_INFORMATION
     ProcessHighGraphicsPriorityInformation, // qs: BOOLEAN (requires SeTcbPrivilege)
     ProcessSubsystemInformation,            // q: SUBSYSTEM_INFORMATION_TYPE // since REDSTONE2
-    ProcessEnergyValues,                    // q: PROCESS_ENERGY_VALUES, PROCESS_EXTENDED_ENERGY_VALUES
+    ProcessEnergyValues,                    // q: PROCESS_ENERGY_VALUES, PROCESS_EXTENDED_ENERGY_VALUES, PROCESS_EXTENDED_ENERGY_VALUES_V1
     ProcessPowerThrottlingState,            // qs: POWER_THROTTLING_PROCESS_STATE
     ProcessReserved3Information,            // ProcessActivityThrottlePolicy // PROCESS_ACTIVITY_THROTTLE_POLICY
     ProcessWin32kSyscallFilterInformation,  // q: WIN32K_SYSCALL_FILTER
@@ -2644,7 +2831,7 @@ typedef enum _THREADINFOCLASS
     ThreadDescriptorTableEntry,         // q: DESCRIPTOR_TABLE_ENTRY (or WOW64_DESCRIPTOR_TABLE_ENTRY)
     ThreadEnableAlignmentFaultFixup,    // s: BOOLEAN
     ThreadEventPair,                    // Obsolete
-    ThreadQuerySetWin32StartAddress,    // q: ULONG_PTR
+    ThreadQuerySetWin32StartAddress,    // qs: PVOID (requires THREAD_Set_LIMITED_INFORMATION)
     ThreadZeroTlsCell,                  // s: ULONG // TlsIndex // 10
     ThreadPerformanceCount,             // q: LARGE_INTEGER
     ThreadAmILastThread,                // q: ULONG
@@ -3047,6 +3234,9 @@ typedef struct _PROCESS_DEVICEMAP_INFORMATION
     };
 } PROCESS_DEVICEMAP_INFORMATION, * PPROCESS_DEVICEMAP_INFORMATION;
 
+/**
+ * The PROCESS_LUID_DOSDEVICES_ONLY flag limits the device map to only devices from the current process or logon session.
+ */
 #define PROCESS_LUID_DOSDEVICES_ONLY 0x00000001
 
 /**
@@ -3341,14 +3531,19 @@ typedef struct _PROCESS_MITIGATION_POLICY_INFORMATION
 // private
 typedef struct _DYNAMIC_FUNCTION_TABLE DYNAMIC_FUNCTION_TABLE, * PDYNAMIC_FUNCTION_TABLE;
 
-// private
+/**
+ * The PROCESS_DYNAMIC_FUNCTION_TABLE_INFORMATION structure is used to manage dynamic function tables for a process.
+ */
 typedef struct _PROCESS_DYNAMIC_FUNCTION_TABLE_INFORMATION
 {
-    PDYNAMIC_FUNCTION_TABLE DynamicFunctionTable;
-    BOOLEAN Remove;
+    PDYNAMIC_FUNCTION_TABLE DynamicFunctionTable; // Pointer to the dynamic function table.
+    BOOLEAN Remove; // Indicates whether to remove (TRUE) or add (FALSE) the dynamic function table.
 } PROCESS_DYNAMIC_FUNCTION_TABLE_INFORMATION, * PPROCESS_DYNAMIC_FUNCTION_TABLE_INFORMATION;
 
 #ifndef _KERNEL_MODE
+/**
+ * The PROCESS_KEEPALIVE_COUNT_INFORMATION structure contains information about the wake and no-wake counts for a process.
+ */
 typedef struct _PROCESS_KEEPALIVE_COUNT_INFORMATION
 {
     ULONG WakeCount;
@@ -3389,6 +3584,10 @@ typedef enum _PROCESS_WORKING_SET_OPERATION
   * Shared pages are those that are shared between multiple processes.
   */
 #define PROCESS_WORKING_SET_FLAG_EMPTY_SHARED_PAGES  0x02
+  /**
+   * The PROCESS_WORKING_SET_FLAG_EMPTY_PAGES flag indicates that the operation should target pages in the working set.
+   */
+#define PROCESS_WORKING_SET_FLAG_EMPTY_PAGES         0x04
   /**
    * The PROCESS_WORKING_SET_FLAG_COMPRESS flag indicates that the operation should compress the pages before they are removed from the working set.
    * Compression is typically used in conjunction with other flags to specify that the pages should be compressed as part of the operation.
@@ -3579,10 +3778,13 @@ typedef struct _POWER_THROTTLING_PROCESS_STATE
 #define WIN32K_SYSCALL_FILTER_STATE_ENABLE 0x1
 #define WIN32K_SYSCALL_FILTER_STATE_AUDIT  0x2
 
+/**
+ * The WIN32K_SYSCALL_FILTER structure is used to specify filtering options for Win32k system calls.
+ */
 typedef struct _WIN32K_SYSCALL_FILTER
 {
-    ULONG FilterState;
-    ULONG FilterSet;
+    ULONG FilterState; // The state of the Win32k syscall filter (e.g., enable, audit).
+    ULONG FilterSet;   // The set of Win32k syscalls to be filtered.
 } WIN32K_SYSCALL_FILTER, * PWIN32K_SYSCALL_FILTER;
 
 // private
@@ -3621,13 +3823,17 @@ typedef struct _PROCESS_ENERGY_TRACKING_STATE
     WCHAR Tag[64];
 } PROCESS_ENERGY_TRACKING_STATE, * PPROCESS_ENERGY_TRACKING_STATE;
 
+/**
+ * The MANAGE_WRITES_TO_EXECUTABLE_MEMORY structure controls write permissions to executable memory
+ * for processes and threads, and provides a signal for kernel write events.
+ */
 typedef struct _MANAGE_WRITES_TO_EXECUTABLE_MEMORY
 {
-    ULONG Version : 8;
-    ULONG ProcessEnableWriteExceptions : 1;
-    ULONG ThreadAllowWrites : 1;
-    ULONG Spare : 22;
-    PVOID KernelWriteToExecutableSignal; // 19H1
+    ULONG Version : 8;                         // The version of the structure.
+    ULONG ProcessEnableWriteExceptions : 1;    // Enables write exceptions for the process.
+    ULONG ThreadAllowWrites : 1;               // Allows the thread to write to executable memory.
+    ULONG Spare : 22;                          // Reserved for future use.
+    HANDLE KernelWriteToExecutableSignal;      // Pointer to kernel signal for write-to-executable events (19H1+).
 } MANAGE_WRITES_TO_EXECUTABLE_MEMORY, * PMANAGE_WRITES_TO_EXECUTABLE_MEMORY;
 
 #ifndef _KERNEL_MODE
@@ -3659,13 +3865,17 @@ typedef struct _POWER_THROTTLING_THREAD_STATE
 #define PROCESS_READWRITEVM_LOGGING_ENABLE_WRITEVM_V    2UL
 
 #if (WDK_NTDDI_VERSION != NTDDI_WIN10_RS3) && (WDK_NTDDI_VERSION != NTDDI_WIN10_RS4)
+/**
+ * The PROCESS_READWRITEVM_LOGGING_INFORMATION structure provides flags to enable logging
+ * of read and write operations to a process's virtual memory.
+ */
 typedef union _PROCESS_READWRITEVM_LOGGING_INFORMATION
 {
     UCHAR Flags;
     struct
     {
-        UCHAR EnableReadVmLogging : 1;
-        UCHAR EnableWriteVmLogging : 1;
+        UCHAR EnableReadVmLogging : 1;  // Enable logging of read operations to virtual memory.
+        UCHAR EnableWriteVmLogging : 1; // Enable logging of write operations to virtual memory.
         UCHAR Unused : 6;
     };
 } PROCESS_READWRITEVM_LOGGING_INFORMATION, * PPROCESS_READWRITEVM_LOGGING_INFORMATION;
@@ -3691,19 +3901,29 @@ typedef struct _PROCESS_UPTIME_INFORMATION
     };
 } PROCESS_UPTIME_INFORMATION, * PPROCESS_UPTIME_INFORMATION;
 
+/**
+ * The PROCESS_SYSTEM_RESOURCE_MANAGEMENT union is used to specify system resource management flags for a process.
+ */
 typedef union _PROCESS_SYSTEM_RESOURCE_MANAGEMENT
 {
     ULONG Flags;
     struct
     {
-        ULONG Foreground : 1;
+        ULONG Foreground : 1; // Indicates if the process is a foreground process (1 = foreground, 0 = background).
         ULONG Reserved : 31;
     };
 } PROCESS_SYSTEM_RESOURCE_MANAGEMENT, * PPROCESS_SYSTEM_RESOURCE_MANAGEMENT;
 
+/**
+ * The PROCESS_SECURITY_DOMAIN_INFORMATION structure contains the security domain identifier for a process.
+ *
+ * This structure is used to query or set the security domain of a process, which can be used for isolation
+ * and security boundary purposes in Windows. The SecurityDomain field is a 64-bit value that uniquely
+ * identifies the security domain associated with the process.
+ */
 typedef struct _PROCESS_SECURITY_DOMAIN_INFORMATION
 {
-    ULONGLONG SecurityDomain;
+    ULONGLONG SecurityDomain; // The unique identifier of the process's security domain.
 } PROCESS_SECURITY_DOMAIN_INFORMATION, * PPROCESS_SECURITY_DOMAIN_INFORMATION;
 
 typedef struct _PROCESS_COMBINE_SECURITY_DOMAINS_INFORMATION
@@ -3711,22 +3931,32 @@ typedef struct _PROCESS_COMBINE_SECURITY_DOMAINS_INFORMATION
     HANDLE ProcessHandle;
 } PROCESS_COMBINE_SECURITY_DOMAINS_INFORMATION, * PPROCESS_COMBINE_SECURITY_DOMAINS_INFORMATION;
 
+/**
+ * The PROCESS_LOGGING_INFORMATION structure provides flags to enable or disable logging
+ * for specific process and thread events, such as virtual memory access, suspend/resume,
+ * execution protection, and impersonation.
+ */
 typedef union _PROCESS_LOGGING_INFORMATION
 {
     ULONG Flags;
     struct
     {
-        ULONG EnableReadVmLogging : 1;
-        ULONG EnableWriteVmLogging : 1;
-        ULONG EnableProcessSuspendResumeLogging : 1;
-        ULONG EnableThreadSuspendResumeLogging : 1;
-        ULONG EnableLocalExecProtectVmLogging : 1;
-        ULONG EnableRemoteExecProtectVmLogging : 1;
-        ULONG EnableImpersonationLogging : 1;
+        ULONG EnableReadVmLogging : 1;                  // Enables logging of read operations to process virtual memory.
+        ULONG EnableWriteVmLogging : 1;                 // Enables logging of write operations to process virtual memory.
+        ULONG EnableProcessSuspendResumeLogging : 1;    // Enables logging of process suspend and resume events.
+        ULONG EnableThreadSuspendResumeLogging : 1;     // Enables logging of thread suspend and resume events.
+        ULONG EnableLocalExecProtectVmLogging : 1;      // Enables logging of local execution protection for virtual memory.
+        ULONG EnableRemoteExecProtectVmLogging : 1;     // Enables logging of remote execution protection for virtual memory.
+        ULONG EnableImpersonationLogging : 1;           // Enables logging of impersonation events.
         ULONG Reserved : 25;
     };
 } PROCESS_LOGGING_INFORMATION, * PPROCESS_LOGGING_INFORMATION;
 
+/**
+ * The PROCESS_LEAP_SECOND_INFORMATION structure contains information about leap second adjustments for a process.
+ *
+ * \remarks https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/ns-processthreadsapi-process_leap_second_info
+ */
 typedef struct _PROCESS_LEAP_SECOND_INFORMATION
 {
     ULONG Flags;
@@ -3756,11 +3986,15 @@ typedef struct _PROCESS_FREE_FIBER_SHADOW_STACK_ALLOCATION_INFORMATION
 //
 typedef struct _PROCESS_SYSCALL_PROVIDER_INFORMATION
 {
-    GUID ProviderId;
-    UCHAR Level;
+    GUID  ProviderId; // The unique identifier of the system call provider.
+    UCHAR Level;      // The level or mode of the provider.
 } PROCESS_SYSCALL_PROVIDER_INFORMATION, * PPROCESS_SYSCALL_PROVIDER_INFORMATION;
 #endif // !defined(_KERNEL_MODE)
 
+/**
+ * Contains dynamic enforced address ranges used by various features related to user-mode Hardware-enforced Stack Protection (HSP).
+ * \remarks https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-process_dynamic_enforced_address_range
+ */
 //typedef struct _PROCESS_DYNAMIC_ENFORCED_ADDRESS_RANGE
 //{
 //    ULONG_PTR BaseAddress;
@@ -3856,20 +4090,18 @@ typedef struct _THREAD_BASIC_INFORMATION
     PTEB TebBaseAddress;        // The base address of the memory region containing the TEB structure. (NtCurrentTeb)
     CLIENT_ID ClientId;         // The process and thread identifier of the thread.
     KAFFINITY AffinityMask;     // The affinity mask of the thread. (deprecated) (SetThreadAffinityMask)
-    KPRIORITY Priority;
-    KPRIORITY BasePriority;
+    KPRIORITY Priority;         // The current priority of the thread. (GetThreadPriority)
+    KPRIORITY BasePriority;     // The current base priority of the thread determined by the thread priority and process priority class.
 } THREAD_BASIC_INFORMATION, * PTHREAD_BASIC_INFORMATION;
 
+/**
+ * The THREAD_LAST_SYSCALL_INFORMATION structure contains information about the last system call made by a thread.
+ */
 typedef struct _THREAD_LAST_SYSCALL_INFORMATION
 {
-    PVOID FirstArgument;
-    USHORT SystemCallNumber;
-#ifdef WIN64
-    USHORT Pad[0x3]; // since REDSTONE2
-#else
-    USHORT Pad[0x1]; // since REDSTONE2
-#endif
-    ULONG64 WaitTime;
+    PVOID   FirstArgument;      // Pointer to the first argument of the last system call.
+    USHORT  SystemCallNumber;   // The system call number of the last system call made by the thread.
+    ULONG64 WaitTime;           // The time spent waiting for the system call to complete, in milliseconds.
 } THREAD_LAST_SYSCALL_INFORMATION, * PTHREAD_LAST_SYSCALL_INFORMATION;
 
 /**
@@ -4693,7 +4925,7 @@ ZwChangeThreadState(
 typedef enum _PROCESS_ACTIVITY_TYPE
 {
     ProcessActivityTypeAudio = 0,
-    ProcessActivityTypeMax = 1
+    ProcessActivityTypeMax   = 1
 } PROCESS_ACTIVITY_TYPE;
 
 // rev
@@ -4702,8 +4934,8 @@ NTSTATUS
 NTAPI
 NtAcquireProcessActivityReference(
     _Out_ PHANDLE ActivityReferenceHandle,
-    _In_ HANDLE ParentProcessHandle,
-    _In_ PROCESS_ACTIVITY_TYPE Reserved
+    _In_ HANDLE   ParentProcessHandle,
+    _In_ ULONG    ProcessActivityType
 );
 
 _IRQL_requires_max_(PASSIVE_LEVEL)
@@ -4712,8 +4944,8 @@ NTSTATUS
 NTAPI
 ZwAcquireProcessActivityReference(
     _Out_ PHANDLE ActivityReferenceHandle,
-    _In_ HANDLE ParentProcessHandle,
-    _In_ PROCESS_ACTIVITY_TYPE Reserved
+    _In_ HANDLE   ParentProcessHandle,
+    _In_ ULONG    ProcessActivityType
 );
 
 //
@@ -5620,6 +5852,7 @@ typedef enum _PROC_THREAD_ATTRIBUTE_NUM {
     ProcThreadAttributeCreateStore                  = 28,
     ProcThreadAttributeTrustedApp                   = 29,
     ProcThreadAttributeSveVectorLength              = 30,
+    ProcThreadAttributeSmeVectorLength              = 31,
 } PROC_THREAD_ATTRIBUTE_NUM;
 #else // _KERNEL_MODE
 // PROC_THREAD_ATTRIBUTE_NUM (Win32 CreateProcess) (dmex)
@@ -5652,6 +5885,7 @@ typedef enum _PROC_THREAD_ATTRIBUTE_NUM {
 #define ProcThreadAttributeCreateStore                  ((_PROC_THREAD_ATTRIBUTE_NUM)28) // ULONG // rev (diversenok)
 #define ProcThreadAttributeTrustedApp                   ((_PROC_THREAD_ATTRIBUTE_NUM)29)
 #define ProcThreadAttributeSveVectorLength              ((_PROC_THREAD_ATTRIBUTE_NUM)30)
+#define ProcThreadAttributeSmeVectorLength              ((_PROC_THREAD_ATTRIBUTE_NUM)31) // since 25H2
 #endif // !_KERNEL_MODE
 
 #ifndef ProcThreadAttributeValue
@@ -6375,6 +6609,7 @@ typedef enum _JOBOBJECTINFOCLASS
     JobObjectPagePriorityLimit,
     JobObjectServerSiloDiagnosticInformation,
     JobObjectNetworkAccountingInformation,
+    JobObjectCpuPartition,
     MaxJobObjectInfoClass,
 } JOBOBJECTINFOCLASS;
 #else
@@ -6430,7 +6665,8 @@ typedef enum _JOBOBJECTINFOCLASS
 #define JobObjectPagePriorityLimit                  ((_JOBOBJECTINFOCLASS)49) // JOBOBJECT_PAGE_PRIORITY_LIMIT
 #define JobObjectServerSiloDiagnosticInformation    ((_JOBOBJECTINFOCLASS)50) // SERVERSILO_DIAGNOSTIC_INFORMATION // since 24H2
 #define JobObjectNetworkAccountingInformation       ((_JOBOBJECTINFOCLASS)51) // JOBOBJECT_NETWORK_ACCOUNTING_INFORMATION
-#define MaxJobObjectInfoClass                       ((_JOBOBJECTINFOCLASS)52)
+#define JobObjectCpuPartition                       ((_JOBOBJECTINFOCLASS)52) // since 25H2
+#define MaxJobObjectInfoClass                       ((_JOBOBJECTINFOCLASS)53)
 #endif // _KERNEL_MODE
 
 #ifdef _KERNEL_MODE
@@ -7063,6 +7299,42 @@ PssNtQuerySnapshot(
     _In_ PSSNT_QUERY_INFORMATION_CLASS InformationClass,
     _Out_writes_bytes_(BufferLength) PVOID Buffer,
     _In_ ULONG BufferLength
+);
+
+// rev
+typedef struct _PSSNT_WALK_MARKER_INFO
+{
+    ULONG Signature; // Win32: 0x4D575350 // 'PSSM'
+    HANDLE SectionHandle;
+} PSSNT_WALK_MARKER_INFO, * PNPSSNT_WALK_MARKER_INFO;
+
+// rev
+NTSYSAPI
+NTSTATUS
+NTAPI
+PssNtWalkSnapshot(
+    _In_ HANDLE SnapshotHandle,
+    _In_ ULONG InformationClass,
+    _In_ HANDLE WalkMarkerHandle,
+    _Out_writes_bytes_(BufferLength) PVOID Buffer,
+    _In_ ULONG BufferLength
+);
+
+// rev
+NTSYSAPI
+NTSTATUS
+NTAPI
+PssNtFreeWalkMarker(
+    _Inout_ PHANDLE WalkMarkerHandle
+);
+
+// rev
+NTSYSAPI
+NTSTATUS
+NTAPI
+PssNtValidateDescriptor(
+    _In_ HANDLE SnapshotHandle,
+    _In_opt_ PVOID ExceptionAddress
 );
 #endif
 #endif // !_KERNEL_MODE

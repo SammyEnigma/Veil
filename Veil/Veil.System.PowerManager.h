@@ -600,7 +600,7 @@ typedef enum _POWER_INFORMATION_LEVEL_INTERNAL
     PowerInternalDeepSleepBlock, // 40
     PowerInternalIsPoFxDevice,
     PowerInternalPowerTransitionExtensionAtBoot,
-    PowerInternalProcessorBrandedFrequency, // in: POWER_INTERNAL_PROCESSOR_BRANDED_FREQENCY_INPUT, out: POWER_INTERNAL_PROCESSOR_BRANDED_FREQENCY_OUTPUT
+    PowerInternalProcessorBrandedFrequency, // in: POWER_INTERNAL_PROCESSOR_BRANDED_FREQUENCY_INPUT, out: POWER_INTERNAL_PROCESSOR_BRANDED_FREQENCY_OUTPUT
     PowerInternalTimeBrokerExpirationReason,
     PowerInternalNotifyUserShutdownStatus,
     PowerInternalPowerRequestTerminalCoreWindow,
@@ -647,11 +647,11 @@ typedef enum _POWER_INFORMATION_LEVEL_INTERNAL
     PowerInternalUnregisterShutdownNotification, // since 22H1
     PowerInternalManageTransitionStateRecord,
     PowerInternalGetAcpiTimeAndAlarmCapabilities, // since 22H2
-    PowerInternalSuspendResumeRequest,
+    PowerInternalSuspendResumeRequest, // 90
     PowerInternalEnergyEstimationInfo, // since 23H2
     PowerInternalProvSocIdentifierOperation, // since 24H2
-    PowerInternalGetVmPerfPrioritySupport,
-    PowerInternalGetVmPerfPriorityConfig,
+    PowerInternalGetVmPerfPrioritySupport, // in: POWER_INTERNAL_VMPERF_PRIORITY_SUPPORT_INPUT, out: POWER_INTERNAL_VMPERF_PRIORITY_SUPPORT_OUTPUT
+    PowerInternalGetVmPerfPriorityConfig, // in: POWER_INTERNAL_VMPERF_PRIORITY_CONFIG_INPUT, out: POWER_INTERNAL_VMPERF_PRIORITY_CONFIG_OUTPUT
     PowerInternalNotifyWin32kPowerRequestQueued,
     PowerInternalNotifyWin32kPowerRequestCompleted,
     PowerInformationInternalMaximum
@@ -671,58 +671,60 @@ typedef enum _POWER_S0_DISCONNECTED_REASON
 typedef struct _POWER_S0_LOW_POWER_IDLE_INFO
 {
     POWER_S0_DISCONNECTED_REASON DisconnectedReason;
+
     union
     {
-        BOOLEAN Storage : 1;
-        BOOLEAN WiFi : 1;
-        BOOLEAN Mbn : 1;
+        BOOLEAN Storage  : 1;
+        BOOLEAN WiFi     : 1;
+        BOOLEAN Mbn      : 1;
         BOOLEAN Ethernet : 1;
         BOOLEAN Reserved : 4;
-        UCHAR AsUCHAR;
+        UCHAR   AsUCHAR;
     } CsDeviceCompliance;
+
     union
     {
         BOOLEAN DisconnectInStandby : 1;
-        BOOLEAN EnforceDs : 1;
-        BOOLEAN Reserved : 6;
-        UCHAR AsUCHAR;
+        BOOLEAN EnforceDs           : 1;
+        BOOLEAN Reserved            : 6;
+        UCHAR   AsUCHAR;
     } Policy;
-} POWER_S0_LOW_POWER_IDLE_INFO, * PPOWER_S0_LOW_POWER_IDLE_INFO;
+} POWER_S0_LOW_POWER_IDLE_INFO, *PPOWER_S0_LOW_POWER_IDLE_INFO;
 
 typedef struct _POWER_INFORMATION_INTERNAL_HEADER
 {
     POWER_INFORMATION_LEVEL_INTERNAL InternalType;
-    ULONG Version;
-} POWER_INFORMATION_INTERNAL_HEADER, * PPOWER_INFORMATION_INTERNAL_HEADER;
+    ULONG                            Version;
+} POWER_INFORMATION_INTERNAL_HEADER, *PPOWER_INFORMATION_INTERNAL_HEADER;
 
 typedef struct _POWER_USER_ABSENCE_PREDICTION
 {
     POWER_INFORMATION_INTERNAL_HEADER Header;
-    LARGE_INTEGER ReturnTime;
-} POWER_USER_ABSENCE_PREDICTION, * PPOWER_USER_ABSENCE_PREDICTION;
+    LARGE_INTEGER                     ReturnTime;
+} POWER_USER_ABSENCE_PREDICTION, *PPOWER_USER_ABSENCE_PREDICTION;
 
 typedef struct _POWER_USER_ABSENCE_PREDICTION_CAPABILITY
 {
     BOOLEAN AbsencePredictionCapability;
-} POWER_USER_ABSENCE_PREDICTION_CAPABILITY, * PPOWER_USER_ABSENCE_PREDICTION_CAPABILITY;
+} POWER_USER_ABSENCE_PREDICTION_CAPABILITY, *PPOWER_USER_ABSENCE_PREDICTION_CAPABILITY;
 
 typedef struct _POWER_PROCESSOR_LATENCY_HINT
 {
     POWER_INFORMATION_INTERNAL_HEADER PowerInformationInternalHeader;
-    ULONG Type;
-} POWER_PROCESSOR_LATENCY_HINT, * PPOWER_PROCESSOR_LATENCY_HINT;
+    ULONG                             Type;
+} POWER_PROCESSOR_LATENCY_HINT, *PPOWER_PROCESSOR_LATENCY_HINT;
 
 typedef struct _POWER_STANDBY_NETWORK_REQUEST
 {
     POWER_INFORMATION_INTERNAL_HEADER PowerInformationInternalHeader;
-    BOOLEAN Active;
-} POWER_STANDBY_NETWORK_REQUEST, * PPOWER_STANDBY_NETWORK_REQUEST;
+    BOOLEAN                           Active;
+} POWER_STANDBY_NETWORK_REQUEST, *PPOWER_STANDBY_NETWORK_REQUEST;
 
 typedef struct _POWER_SET_BACKGROUND_TASK_STATE
 {
     POWER_INFORMATION_INTERNAL_HEADER PowerInformationInternalHeader;
-    BOOLEAN Engaged;
-} POWER_SET_BACKGROUND_TASK_STATE, * PPOWER_SET_BACKGROUND_TASK_STATE;
+    BOOLEAN                           Engaged;
+} POWER_SET_BACKGROUND_TASK_STATE, *PPOWER_SET_BACKGROUND_TASK_STATE;
 
 // rev
 typedef struct _POWER_BOOT_SESSION_STANDBY_ACTIVATION_INFO
@@ -731,16 +733,17 @@ typedef struct _POWER_BOOT_SESSION_STANDBY_ACTIVATION_INFO
     ULONG DripsTotalTime;
     ULONG ActivatorClientTotalActiveTime;
     ULONG PerActivatorClientTotalActiveTime[98];
-} POWER_BOOT_SESSION_STANDBY_ACTIVATION_INFO, * PPOWER_BOOT_SESSION_STANDBY_ACTIVATION_INFO;
+} POWER_BOOT_SESSION_STANDBY_ACTIVATION_INFO, *PPOWER_BOOT_SESSION_STANDBY_ACTIVATION_INFO;
+
 // rev
 typedef struct _POWER_SESSION_POWER_STATE
 {
     POWER_INFORMATION_INTERNAL_HEADER Header;
-    ULONG SessionId;
-    BOOLEAN On;
-    BOOLEAN IsConsole;
-    POWER_MONITOR_REQUEST_REASON RequestReason;
-} POWER_SESSION_POWER_STATE, * PPOWER_SESSION_POWER_STATE;
+    ULONG                             SessionId;
+    BOOLEAN                           On;
+    BOOLEAN                           IsConsole;
+    POWER_MONITOR_REQUEST_REASON      RequestReason;
+} POWER_SESSION_POWER_STATE, *PPOWER_SESSION_POWER_STATE;
 
 // rev
 typedef struct _POWER_INTERNAL_PROCESSOR_QOS_SUPPORT
@@ -748,20 +751,20 @@ typedef struct _POWER_INTERNAL_PROCESSOR_QOS_SUPPORT
     BOOLEAN QosSupportedAndConfigured;
     BOOLEAN SchedulerDirectedPerfStatesSupported;
     BOOLEAN QosGroupPolicyDisable;
-} POWER_INTERNAL_PROCESSOR_QOS_SUPPORT, * PPOWER_INTERNAL_PROCESSOR_QOS_SUPPORT;
+} POWER_INTERNAL_PROCESSOR_QOS_SUPPORT, *PPOWER_INTERNAL_PROCESSOR_QOS_SUPPORT;
 
 // rev
 typedef struct _POWER_INTERNAL_HOST_ENERGY_SAVER_STATE
 {
     POWER_INFORMATION_INTERNAL_HEADER Header;
-    BOOLEAN EsEnabledOnHost;
-} POWER_INTERNAL_HOST_ENERGY_SAVER_STATE, * PPOWER_INTERNAL_HOST_ENERGY_SAVER_STATE;
+    BOOLEAN                           EsEnabledOnHost;
+} POWER_INTERNAL_HOST_ENERGY_SAVER_STATE, *PPOWER_INTERNAL_HOST_ENERGY_SAVER_STATE;
 
 typedef struct _POWER_INTERNAL_PROCESSOR_BRANDED_FREQUENCY_INPUT
 {
     POWER_INFORMATION_LEVEL_INTERNAL InternalType;
-    PROCESSOR_NUMBER ProcessorNumber; // ULONG_MAX
-} POWER_INTERNAL_PROCESSOR_BRANDED_FREQUENCY_INPUT, * PPOWER_INTERNAL_PROCESSOR_BRANDED_FREQUENCY_INPUT;
+    PROCESSOR_NUMBER                 ProcessorNumber; // ULONG_MAX
+} POWER_INTERNAL_PROCESSOR_BRANDED_FREQUENCY_INPUT, *PPOWER_INTERNAL_PROCESSOR_BRANDED_FREQUENCY_INPUT;
 
 #define POWER_INTERNAL_PROCESSOR_BRANDED_FREQUENCY_VERSION 1
 
@@ -775,12 +778,12 @@ typedef struct _POWER_INTERNAL_PROCESSOR_BRANDED_FREQUENCY_OUTPUT
 // rev
 typedef struct _PROCESSOR_IDLE_VETO
 {
-    ULONG Version;
+    ULONG            Version;
     PROCESSOR_NUMBER ProcessorNumber;
-    ULONG StateIndex;
-    ULONG VetoReason;
-    UCHAR Increment;
-} PROCESSOR_IDLE_VETO, * PPROCESSOR_IDLE_VETO;
+    ULONG            StateIndex;
+    ULONG            VetoReason;
+    UCHAR            Increment;
+} PROCESSOR_IDLE_VETO, *PPROCESSOR_IDLE_VETO;
 
 // rev
 typedef struct _PLATFORM_IDLE_VETO
@@ -789,14 +792,57 @@ typedef struct _PLATFORM_IDLE_VETO
     ULONG StateIndex;
     ULONG VetoReason;
     UCHAR Increment;
-} PLATFORM_IDLE_VETO, * PPLATFORM_IDLE_VETO;
+} PLATFORM_IDLE_VETO, *PPLATFORM_IDLE_VETO;
 
 // rev
 typedef struct _POWER_INTERNAL_BOOTAPP_DIAGNOSTIC
 {
     ULONG BootAppErrorDiagCode; // bcdedit last status
     ULONG BootAppFailureStatus; // bcdedit last status
-} POWER_INTERNAL_BOOTAPP_DIAGNOSTIC, * PPOWER_INTERNAL_BOOTAPP_DIAGNOSTIC;
+} POWER_INTERNAL_BOOTAPP_DIAGNOSTIC, *PPOWER_INTERNAL_BOOTAPP_DIAGNOSTIC;
+
+// rev
+typedef struct _POWER_INTERNAL_SOC_IDENTIFIER_OPERATION_INPUT
+{
+    POWER_INFORMATION_LEVEL_INTERNAL InternalType;
+    ULONG                            Action;
+    ULONG                            Domain;
+} POWER_INTERNAL_SOC_IDENTIFIER_OPERATION_INPUT, *PPOWER_INTERNAL_SOC_IDENTIFIER_OPERATION_INPUT;
+
+// rev
+typedef struct _POWER_INTERNAL_SOC_IDENTIFIER_OPERATION_OUTPUT
+{
+    BOOLEAN VmThrottleSupportedAndConfigured;
+    ULONG   VmThrottlePriorityCount;
+} POWER_INTERNAL_SOC_IDENTIFIER_OPERATION_OUTPUT, *PPOWER_INTERNAL_SOC_IDENTIFIER_OPERATION_OUTPUT;
+
+// rev
+typedef struct _POWER_INTERNAL_VMPERF_PRIORITY_SUPPORT_INPUT
+{
+    POWER_INFORMATION_LEVEL_INTERNAL InternalType;
+} POWER_INTERNAL_VMPERF_PRIORITY_SUPPORT_INPUT, *PPOWER_INTERNAL_VMPERF_PRIORITY_SUPPORT_INPUT;
+
+// rev
+typedef struct _POWER_INTERNAL_VMPERF_PRIORITY_SUPPORT_OUTPUT
+{
+    BOOLEAN VmThrottleSupportedAndConfigured;
+    ULONG   VmThrottlePriorityCount;
+} POWER_INTERNAL_VMPERF_PRIORITY_SUPPORT_OUTPUT, *PPOWER_INTERNAL_VMPERF_PRIORITY_SUPPORT_OUTPUT;
+
+// rev
+typedef struct _POWER_INTERNAL_VMPERF_PRIORITY_CONFIG_INPUT
+{
+    POWER_INFORMATION_LEVEL_INTERNAL InternalType;
+    ULONG                            Action;
+    ULONG                            Domain;
+} POWER_INTERNAL_VMPERF_PRIORITY_CONFIG_INPUT, *PPOWER_INTERNAL_VMPERF_PRIORITY_CONFIG_INPUT;
+
+// rev
+typedef struct _POWER_INTERNAL_VMPERF_PRIORITY_CONFIG_OUTPUT
+{
+    BOOLEAN VmThrottleSupportedAndConfigured;
+    ULONG   VmThrottlePriorityCount;
+} POWER_INTERNAL_VMPERF_PRIORITY_CONFIG_OUTPUT, *PPOWER_INTERNAL_VMPERF_PRIORITY_CONFIG_OUTPUT;
 
 /**
  * The NtPowerInformation routine sets or retrieves system power information.

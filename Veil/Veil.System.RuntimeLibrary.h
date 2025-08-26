@@ -32,6 +32,10 @@ VEIL_BEGIN()
 
 #ifndef _KERNEL_MODE
 
+//
+// Pointer arithmetic macros (type safe)
+//
+
 //++
 //
 // PCHAR
@@ -133,8 +137,20 @@ RtlFailFast(
 #endif // !_KERNEL_MODE
 
 //
-// Time
+// Time unit constants (ordered by magnitude)
 //
+
+#define RTL_NANOSEC_PER_TICK        100
+#define RTL_TICKS_PER_MICROSEC      10
+#define RTL_TICKS_PER_MILLISEC      (RTL_TICKS_PER_MICROSEC * 1000)  // 10,000
+#define RTL_TICKS_PER_SEC           (RTL_TICKS_PER_MILLISEC * 1000)  // 10,000,000
+#define RTL_TICKS_PER_MIN           (RTL_TICKS_PER_SEC * 60)         // 600,000,000
+#define RTL_TICKS_PER_HOUR          (RTL_TICKS_PER_MIN * 60)         // 36,000,000,000
+#define RTL_TICKS_PER_DAY           (RTL_TICKS_PER_HOUR * 24)        // 864,000,000,000
+#define RTL_TICKS_PER_WEEK          (RTL_TICKS_PER_DAY * 7)          // 6,048,000,000,000
+#define RTL_TICKS_PER_MONTH         (RTL_TICKS_PER_DAY * 30)         // 25,920,000,000,000
+#define RTL_TICKS_PER_YEAR          (RTL_TICKS_PER_DAY * 365)        // 31,536,000,000,000
+#define RTL_TICKS_PER_LEAP_YEAR     (RTL_TICKS_PER_DAY * 366)        // 31,622,400,000,000
 
 #define RTL_NANOSEC_PER_SEC              1000000000ull
 #define RTL_NANOSEC_PER_MILLISEC            1000000ull
@@ -142,9 +158,52 @@ RtlFailFast(
 #define RTL_100NANOSEC_PER_MILLISEC           10000ull
 #define RTL_MILLISEC_PER_SEC                   1000ull
 
-#define RTL_SEC_TO_MILLISEC(s)          ((s) * RTL_MILLISEC_PER_SEC)
-#define RTL_SEC_TO_100NANOSEC(s)        ((s) * RTL_100NANOSEC_PER_SEC)
-#define RTL_MILLISEC_TO_100NANOSEC(m)   ((m) * RTL_100NANOSEC_PER_MILLISEC)
+#define RTL_SEC_PER_HOUR                       3600ull // 1 hour  // 3,600 seconds
+#define RTL_SEC_PER_DAY                       86400ull // 1 day   // 86,400 seconds
+#define RTL_SEC_PER_WEEK                     604800ull // 1 week  // 604,800 seconds
+#define RTL_SEC_PER_MONTH                   2592000ull // 1 month // 2,592,000 seconds (30 days)
+#define RTL_SEC_PER_YEAR                   31536000ull // 1 year  // 31,536,000 seconds (365 days)
+
+//
+// Time conversion macros (ordered by unit)
+//
+
+// Nanoseconds
+#define RTL_SEC_TO_NANOSEC(s)          ((s) * RTL_NANOSEC_PER_SEC)
+#define RTL_NANOSEC_TO_SEC(ns)         ((ns) / RTL_NANOSEC_PER_SEC)
+#define RTL_MILLISEC_TO_NANOSEC(m)     ((m) * RTL_NANOSEC_PER_MILLISEC)
+#define RTL_NANOSEC_TO_MILLISEC(ns)    ((ns) / RTL_NANOSEC_PER_MILLISEC)
+#define RTL_NANOSEC_TO_100NANOSEC(ns)  ((ns) / 100)
+#define RTL_100NANOSEC_TO_NANOSEC(ns)  ((ns) * 100)
+
+// 100-Nanoseconds
+#define RTL_SEC_TO_100NANOSEC(s)       ((s) * RTL_100NANOSEC_PER_SEC)
+#define RTL_100NANOSEC_TO_SEC(ns)      ((ns) / RTL_100NANOSEC_PER_SEC)
+#define RTL_MILLISEC_TO_100NANOSEC(m)  ((m) * RTL_100NANOSEC_PER_MILLISEC)
+#define RTL_100NANOSEC_TO_MILLISEC(ns) ((ns) / RTL_100NANOSEC_PER_MILLISEC)
+
+// Milliseconds
+#define RTL_SEC_TO_MILLISEC(s)         ((s) * RTL_MILLISEC_PER_SEC)
+#define RTL_MILLISEC_TO_SEC(m)         ((m) / RTL_MILLISEC_PER_SEC)
+
+/**
+ * The maximum value of the e_lfanew field in the IMAGE_DOS_HEADER structure for validation.
+ */
+#define RTL_IMAGE_MAX_DOS_HEADER (256UL * (1024UL * 1024UL)) // 256 MB
+
+ /**
+  * Meta characters for wildcard processing.
+  * \remarks NtQueryDirectoryFile(Ex), RtlDoesNameContainWildCards and file system drivers (FAT, NTFS, REFS).
+  */
+
+#ifndef _KERNEL_MODE
+#define ANSI_DOS_STAR   ('<')
+#define ANSI_DOS_QM     ('>')
+#define ANSI_DOS_DOT    ('"')
+#define DOS_STAR        (L'<')
+#define DOS_QM          (L'>')
+#define DOS_DOT         (L'"')
+#endif
 
 //
 //  Doubly-linked list manipulation routines.
@@ -638,8 +697,17 @@ NTAPI
 RtlWnfDllUnloadCallback(
     _In_ PVOID DllBase
 );
-
 #endif // (NTDDI_VERSION >= NTDDI_WINTHRESHOLD)
+
+//#if (NTDDI_VERSION >= NTDDI_WIN10_VB)
+// winnt.h
+//NTSYSAPI
+//ULONG_PTR
+//NTAPI
+//RtlGetReturnAddressHijackTarget(
+//    VOID
+//);
+//#endif
 #endif // !_KERNEL_MODE
 
 //
@@ -3015,7 +3083,7 @@ RtlCompareUnicodeString(
 );
 
 /**
- * The RtlCompareUnicodeString routine compares two Unicode strings.
+ * The RtlCompareUnicodeStrings routine compares two Unicode strings.
  *
  * \param[in] String1 Pointer to the first string.
  * \param[in] String1Length The length, in bytes, of the first string.
@@ -3982,6 +4050,16 @@ RtlIsNormalizedString(
 );
 
 // ntifs:FsRtlIsNameInExpression
+/**
+ * The RtlIsNameInExpression routine determines whether a Unicode string matches the specified pattern.
+ *
+ * \param Expression A pointer to the pattern string. This string can contain wildcard characters. If the IgnoreCase parameter is TRUE, the string must contain only uppercase characters.
+ * \param Name Maximum number of bytes to be written to UTF8StringDestination. If this value causes the translated string to be truncated, RtlUnicodeToUTF8N returns an error status.
+ * \param IgnoreCase TRUE for case-insensitive matching, or FALSE for case-sensitive matching.
+ * \param UpcaseTable An optional pointer to an uppercase character table to use for case-insensitive matching. If this parameter is NULL, the default system uppercase character table is used.
+ * \return TRUE if the string matches the pattern. If the string does not match the pattern, this function returns FALSE.
+ * \sa https://learn.microsoft.com/en-us/windows/win32/devnotes/rtlisnameinexpression
+ */
 NTSYSAPI
 BOOLEAN
 NTAPI
@@ -4007,6 +4085,14 @@ RtlIsNameInUnUpcasedExpression(
 
 #if (NTDDI_VERSION >= NTDDI_WIN10_19H1)
 // ntifs:FsRtlDoesNameContainWildCards
+/**
+ * The RtlDoesNameContainWildCards routine determines whether a Unicode string contains wildcard characters.
+ *
+ * \param Name A pointer to the string to be checked.
+ * \return TRUE if one or more wildcard characters were found, FALSE otherwise.
+ * \remarks The following are wildcard characters: *, ?, ANSI_DOS_STAR, ANSI_DOS_DOT, and ANSI_DOS_QM.
+ * \sa https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ntifs/nf-ntifs-_fsrtl_advanced_fcb_header-fsrtldoesnamecontainwildcards
+ */
 NTSYSAPI
 BOOLEAN
 NTAPI
@@ -4602,6 +4688,24 @@ RtlCultureNameToLCID(
     _Out_ PLCID Lcid
 );
 
+// rev
+NTSYSAPI
+BOOLEAN
+NTAPI
+RtlpConvertLCIDsToCultureNames(
+    _In_ PCWSTR Lcids, // array
+    _Out_ PCWSTR* CultureNames
+);
+
+// rev
+NTSYSAPI
+BOOLEAN
+NTAPI
+RtlpConvertCultureNamesToLCIDs(
+    _In_ PCWSTR CultureNames, // array
+    _Out_ PCWSTR* Lcids
+);
+
 // private
 NTSYSAPI
 VOID
@@ -5058,6 +5162,13 @@ RtlCreateUserProcessEx(
 );
 #endif
 
+/**
+ * Ends the calling process and all its threads.
+ *
+ * \param ExitStatus The exit status for the process and all threads.
+ * \sa https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-exitprocess
+ * \remarks This function does not return to the caller. It terminates the process and all threads immediately.
+ */
 DECLSPEC_NORETURN
 NTSYSAPI
 VOID
@@ -5127,11 +5238,12 @@ RtlUpdateClonedSRWLock(
     _In_ LOGICAL Shared // TRUE to set to shared acquire
 );
 
-// rev
-#define RTL_PROCESS_REFLECTION_FLAGS_INHERIT_HANDLES    0x2
-#define RTL_PROCESS_REFLECTION_FLAGS_NO_SUSPEND         0x4
-#define RTL_PROCESS_REFLECTION_FLAGS_NO_SYNCHRONIZE     0x8
-#define RTL_PROCESS_REFLECTION_FLAGS_NO_CLOSE_EVENT     0x10
+// rev RtlCloneUserProcess Flags
+#define RTL_PROCESS_REFLECTION_FLAGS_CREATE_SUSPENDED 0x00000001
+#define RTL_PROCESS_REFLECTION_FLAGS_INHERIT_HANDLES  0x00000002
+#define RTL_PROCESS_REFLECTION_FLAGS_NO_SUSPEND       0x00000004
+#define RTL_PROCESS_REFLECTION_FLAGS_NO_SYNCHRONIZE   0x00000008
+#define RTL_PROCESS_REFLECTION_FLAGS_NO_CLOSE_EVENT   0x00000010
 
 // private
 typedef struct _RTLP_PROCESS_REFLECTION_REFLECTION_INFORMATION
@@ -5144,6 +5256,17 @@ typedef struct _RTLP_PROCESS_REFLECTION_REFLECTION_INFORMATION
 typedef RTLP_PROCESS_REFLECTION_REFLECTION_INFORMATION PROCESS_REFLECTION_INFORMATION, * PPROCESS_REFLECTION_INFORMATION;
 
 // rev
+/**
+ * The RtlCreateProcessReflection function creates a lightweight copy of a process for debugging or snapshot purposes.
+ *
+ * \param ProcessHandle Handle to the process to reflect.
+ * \param Flags Flags that control the behavior of the reflection. See RTL_PROCESS_REFLECTION_FLAGS_*.
+ * \param StartRoutine Optional pointer to a routine to execute in the reflected process.
+ * \param StartContext Optional pointer to context to pass to the start routine.
+ * \param EventHandle Optional handle to an event to signal when the reflection is complete.
+ * \param ReflectionInformation Optional pointer to a structure that receives information about the reflected process.
+ * \return NTSTATUS Successful or errant status.
+ */
 NTSYSAPI
 NTSTATUS
 NTAPI
@@ -5156,6 +5279,15 @@ RtlCreateProcessReflection(
     _Out_opt_ PRTLP_PROCESS_REFLECTION_REFLECTION_INFORMATION ReflectionInformation
 );
 
+/**
+ * The RtlSetProcessIsCritical function sets or clears the critical status of the current process.
+ *
+ * \param NewValue TRUE to mark the process as critical, FALSE to clear.
+ * \param OldValue Optional pointer to receive the previous critical status.
+ * \param CheckFlag If TRUE, checks for certain conditions before setting.
+ * \return NTSTATUS Successful or errant status.
+ * \remarks A critical process will cause a system bugcheck if terminated.
+ */
 NTSYSAPI
 NTSTATUS
 STDAPIVCALLTYPE
@@ -5165,6 +5297,15 @@ RtlSetProcessIsCritical(
     _In_ BOOLEAN CheckFlag
 );
 
+/**
+ * The RtlSetThreadIsCritical function sets or clears the critical status of the current thread.
+ *
+ * \param NewValue TRUE to mark the thread as critical, FALSE to clear.
+ * \param OldValue Optional pointer to receive the previous critical status.
+ * \param CheckFlag If TRUE, checks for certain conditions before setting.
+ * \return NTSTATUS Successful or errant status.
+ * \remarks A critical thread will cause a system bugcheck if terminated.
+ */
 NTSYSAPI
 NTSTATUS
 STDAPIVCALLTYPE
@@ -5175,6 +5316,12 @@ RtlSetThreadIsCritical(
 );
 
 // rev
+/**
+ * The RtlSetThreadSubProcessTag function sets the sub-process tag for the current thread.
+ *
+ * \param SubProcessTag Pointer to the tag value to set.
+ * \return The previous sub-process tag value.
+ */
 NTSYSAPI
 PVOID
 NTAPI
@@ -5183,6 +5330,12 @@ RtlSetThreadSubProcessTag(
 );
 
 // rev
+/**
+ * Validates the process protection level.
+ *
+ * \param ProcessProtection Pointer to a PS_PROTECTION structure describing the protection.
+ * \return TRUE if the protection level is valid, FALSE otherwise.
+ */
 NTSYSAPI
 BOOLEAN
 NTAPI
@@ -5191,6 +5344,13 @@ RtlValidProcessProtection(
 );
 
 // rev
+/**
+ * Tests whether a source protection level can access a target protection level.
+ *
+ * \param Source Pointer to a PS_PROTECTION structure for the source.
+ * \param Target Pointer to a PS_PROTECTION structure for the target.
+ * \return TRUE if access is allowed, FALSE otherwise.
+ */
 NTSYSAPI
 BOOLEAN
 NTAPI
@@ -5450,6 +5610,16 @@ NTAPI
 RtlLocateExtendedFeature(
     _In_ PCONTEXT_EX ContextEx,
     _In_ ULONG FeatureId,
+    _Out_opt_ PULONG Length
+);
+
+NTSYSAPI
+PVOID
+NTAPI
+RtlLocateExtendedFeature2(
+    _In_ PCONTEXT_EX ContextEx,
+    _In_ ULONG FeatureId,
+    _In_ XSTATE_CONFIGURATION XState,
     _Out_opt_ PULONG Length
 );
 
@@ -6664,6 +6834,38 @@ RtlCompareMemoryUlong(
 
 #ifndef _KERNEL_MODE
 
+NTSYSAPI
+NTSTATUS
+NTAPI
+RtlCopyMappedMemory(
+    _Out_writes_bytes_all_(Length) PVOID Destination,
+    _In_reads_bytes_(Length) PVOID Source,
+    _In_ SIZE_T Length
+);
+
+#if defined(_M_AMD64) || defined(_M_ARM64)
+NTSYSAPI
+VOID
+NTAPI
+RtlCopyMemoryNonTemporal(
+    _Out_writes_bytes_all_(Length) VOID UNALIGNED* Destination,
+    _In_reads_bytes_(Length) CONST VOID UNALIGNED* Source,
+    _In_ SIZE_T Length
+);
+
+NTSYSAPI
+VOID
+NTAPI
+RtlFillMemoryNonTemporal(
+    _Out_writes_bytes_all_(Length) VOID UNALIGNED* Destination,
+    _In_ SIZE_T Length,
+    _In_ CONST UCHAR Value
+);
+#else
+#define RtlCopyMemoryNonTemporal RtlCopyMemory
+#define RtlFillMemoryNonTemporal RtlFillMemory
+#endif
+
 #if defined(_M_AMD64)
 FORCEINLINE
 VOID
@@ -6951,6 +7153,12 @@ RtlDetermineDosPathNameType_Ustr(
     _In_ PCUNICODE_STRING DosFileName
 );
 
+/**
+ * The RtlDetermineDosPathNameType_U routine determines the type of Dos or Win32 path type for the specified filename.
+ *
+ * \param DosFileName A pointer to the buffer that contains the Dos or Win32 filename.
+ * \return The return value specifies the path type for the specified file.
+ */
 NTSYSAPI
 RTL_PATH_TYPE
 NTAPI
@@ -6965,6 +7173,15 @@ RtlIsDosDeviceName_Ustr(
     _In_ PCUNICODE_STRING DosFileName
 );
 
+/**
+ * The RtlIsDosDeviceName_U routine examines the Dos format file name and determines if it is a Dos device name.
+ *
+ * \param DosFileName A pointer to the buffer that contains the DOS or Win32 filename.
+ * \return A nonzero value when the Dos file name is the name of a Dos device. The high order 16 bits is the offset
+ * in the input buffer where the dos device name beings and the low order 16 bits is the length of the device name (excluding any optional trailing colon).
+ * Otherwise, A zero value when the Dos file name is not the name of a Dos device.
+ * \sa https://learn.microsoft.com/en-us/windows/win32/devnotes/rtlisdosdevicename_u
+ */
 NTSYSAPI
 ULONG
 NTAPI
@@ -6972,6 +7189,16 @@ RtlIsDosDeviceName_U(
     _In_ PCWSTR DosFileName
 );
 
+/**
+ * The RtlGetFullPathName_U routine retrieves the full path and file name of the specified file.
+ *
+ * \param FileName A pointer to the buffer that contains the relative filename.
+ * \param BufferLength The length of the buffer for the file path string, in WCHARs. The buffer length must include room for a terminating null character.
+ * \param Buffer A pointer to the buffer that receives the file path string.
+ * \param FilePart A pointer to a buffer that receives the address (within Buffer) of the final file name component in the path.
+ * \return If the function succeeds, the return value specifies the number of characters that are written to the buffer, not including the terminating null character.
+ * \sa https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-getfullpathnamea
+ */
 NTSYSAPI
 ULONG
 NTAPI
@@ -6983,6 +7210,17 @@ RtlGetFullPathName_U(
 );
 
 // rev
+/**
+ * The RtlGetFullPathName_UEx routine retrieves the full path and file name of the specified file.
+ *
+ * \param FileName A pointer to the buffer that contains the relative filename.
+ * \param BufferLength The length of the buffer for the file path string, in WCHARs. The buffer length must include room for a terminating null character.
+ * \param Buffer A pointer to the buffer that receives the file path string.
+ * \param FilePart A pointer to a buffer that receives the address (within Buffer) of the final file name component in the path.
+ * \param BytesRequired If the function succeeds, the return value specifies the number of characters that are written to the buffer, not including the terminating null character.
+ * \return NTSTATUS Successful or errant status.
+ * \sa https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-getfullpathnamea
+ */
 NTSYSAPI
 NTSTATUS
 NTAPI
@@ -7020,6 +7258,14 @@ RtlGetFullPathName_UstrEx(
     _Out_opt_ SIZE_T* BytesRequired
 );
 
+/**
+ * The RtlGetCurrentDirectory_U routine retrieves the current directory for the current process.
+ *
+ * \param BufferLength The length of the buffer for the current directory string, in WCHARs. The buffer length must include room for a terminating null character.
+ * \param Buffer A pointer to the buffer that receives the current directory string.
+ * \return If the function succeeds, the return value specifies the number of characters that are written to the buffer, not including the terminating null character.
+ * \sa https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-getcurrentdirectory
+ */
 NTSYSAPI
 ULONG
 NTAPI
@@ -7028,6 +7274,14 @@ RtlGetCurrentDirectory_U(
     _Out_writes_bytes_(BufferLength) PWSTR Buffer
 );
 
+/**
+ * The RtlSetCurrentDirectory_U routine changes the current directory for the current process.
+ *
+ * \param PathName The path to the new current directory.
+ * This parameter may specify a relative path or a full path. In either case, the full path of the specified directory is calculated and stored as the current directory.
+ * \return If the function succeeds, the return value specifies the number of characters that are written to the buffer, not including the terminating null character.
+ * \sa https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-getcurrentdirectory
+ */
 NTSYSAPI
 NTSTATUS
 NTAPI
@@ -11136,6 +11390,21 @@ RtlAddProcessTrustLabelAce(
 );
 #endif //NTDDI_VERSION >= NTDDI_WIN8
 
+// rev
+NTSYSAPI
+NTSTATUS
+NTAPI
+RtlAddAccessFilterAce(
+    _Inout_ PACL Acl,
+    _In_ ULONG AceRevision,
+    _In_ ULONG AceFlags, // TRUST_PROTECTED_FILTER_ACE_FLAG
+    _In_ PSID AccessFilterSid,
+    _In_ UCHAR AceType, // SYSTEM_FILTERING_ACE_TYPE
+    _In_ ACCESS_MASK AccessMask,
+    _In_ PVOID Buffer, // SYSTEM_ACCESS_FILTER_ACE
+    _In_ USHORT BufferLength
+);
+
 // Named pipes
 
 NTSYSAPI
@@ -11404,6 +11673,18 @@ RtlQueryValidationRunlevel(
 );
 #endif
 
+NTSYSAPI
+NTSTATUS
+NTAPI
+RtlNewSecurityGrantedAccess(
+    _In_ ACCESS_MASK DesiredAccess,
+    _Out_ PPRIVILEGE_SET NewPrivileges,
+    _Inout_ PULONG Length,
+    _In_opt_ HANDLE TokenHandle,
+    _In_ PGENERIC_MAPPING GenericMapping,
+    _Out_ PACCESS_MASK RemainingDesiredAccess
+);
+
 //
 // Private namespaces
 //
@@ -11584,6 +11865,18 @@ BOOLEAN
 NTAPI
 RtlGetNtProductType(
     _Out_ PNT_PRODUCT_TYPE NtProductType
+);
+
+// private
+NTSYSAPI
+BOOLEAN
+NTAPI
+RtlGetProductInfo(
+    _In_ ULONG OSMajorVersion,
+    _In_ ULONG OSMinorVersion,
+    _In_ ULONG SpMajorVersion,
+    _In_ ULONG SpMinorVersion,
+    _Out_ PULONG ReturnedProductType
 );
 
 #if (NTDDI_VERSION >= NTDDI_WIN10_RS1)
@@ -12488,7 +12781,7 @@ RtlUnlockModuleSection(
 /**
  * The RTL_UNLOAD_EVENT_TRACE structure contains the unloaded module event information.
  *
- * @sa https://learn.microsoft.com/en-us/windows/win32/devnotes/rtlgetunloadeventtrace
+ * \sa https://learn.microsoft.com/en-us/windows/win32/devnotes/rtlgetunloadeventtrace
  */
 typedef struct _RTL_UNLOAD_EVENT_TRACE
 {
@@ -12515,8 +12808,8 @@ typedef struct _RTL_UNLOAD_EVENT_TRACE32
 /**
  * Enables the dump code to get the unloaded module information from Ntdll.dll for storage in the minidump.
  *
- * @return A pointer to an array of unload events.
- * @sa https://learn.microsoft.com/en-us/windows/win32/devnotes/rtlgetunloadeventtrace
+ * \return A pointer to an array of unload events.
+ * \sa https://learn.microsoft.com/en-us/windows/win32/devnotes/rtlgetunloadeventtrace
  */
 NTSYSAPI
 PRTL_UNLOAD_EVENT_TRACE
@@ -12528,11 +12821,11 @@ RtlGetUnloadEventTrace(
 /**
  * Retrieves the size and location of the dynamically unloaded module list for the current process.
  *
- * @param ElementSize A pointer to a variable that contains the size of an element in the list.
- * @param ElementCount A pointer to a variable that contains the number of elements in the list.
- * @param EventTrace A pointer to an array of RTL_UNLOAD_EVENT_TRACE structures.
- * @return A pointer to an array of unload events.
- * @sa https://learn.microsoft.com/en-us/windows/win32/devnotes/rtlgetunloadeventtraceex
+ * \param ElementSize A pointer to a variable that contains the size of an element in the list.
+ * \param ElementCount A pointer to a variable that contains the number of elements in the list.
+ * \param EventTrace A pointer to an array of RTL_UNLOAD_EVENT_TRACE structures.
+ * \return A pointer to an array of unload events.
+ * \sa https://learn.microsoft.com/en-us/windows/win32/devnotes/rtlgetunloadeventtraceex
  */
 NTSYSAPI
 PRTL_UNLOAD_EVENT_TRACE
@@ -13298,8 +13591,8 @@ RtlFlsFree(
 );
 
 // Flags
-#define RTLP_FLS_DATA_CLEANUP_RUN_CALLBACKS 0x00000001
-#define RTLP_FLS_DATA_CLEANUP_DEALLOCATE    0x00000002
+#define RTL_FLS_DATA_CLEANUP_PER_SLOT   1
+#define RTL_FLS_DATA_CLEANUP_DEALLOCATE 2
 
 NTSYSAPI
 VOID
@@ -13650,7 +13943,7 @@ typedef enum _RTL_BSD_ITEM_TYPE
     RtlBsdPowerTransition, // q: s: RTL_BSD_DATA_POWER_TRANSITION
     RtlBsdItemBootAttemptCount, // q: s: UCHAR // BootAttemptCount
     RtlBsdItemBootCheckpoint, // q: s: UCHAR // LastBootCheckpoint
-    RtlBsdItemBootId, // q; s: ULONG (SharedUserData->BootId)
+    RtlBsdItemBootId, // q; s: ULONG (SharedUserData->BootId) // 10
     RtlBsdItemShutdownBootId, // q; s: ULONG
     RtlBsdItemReportedAbnormalShutdownBootId, // q; s: ULONG
     RtlBsdItemErrorInfo, // RTL_BSD_DATA_ERROR_INFO
@@ -13801,8 +14094,8 @@ NTAPI
 RtlGetSystemBootStatus(
     _In_ RTL_BSD_ITEM_TYPE BootStatusInformationClass,
     _Out_ PVOID DataBuffer,
-    _In_ ULONG DataLength,
-    _Out_opt_ PULONG ReturnLength
+    _In_ ULONG DataLength
+    //_Out_opt_ PULONG ReturnLength
 );
 
 // rev
@@ -13812,8 +14105,8 @@ NTAPI
 RtlSetSystemBootStatus(
     _In_ RTL_BSD_ITEM_TYPE BootStatusInformationClass,
     _In_ PVOID DataBuffer,
-    _In_ ULONG DataLength,
-    _Out_opt_ PULONG ReturnLength
+    _In_ ULONG DataLength
+    //_Out_opt_ PULONG ReturnLength
 );
 #endif
 
@@ -14264,6 +14557,24 @@ RtlOverwriteFeatureConfigurationBuffer(
 );
 #endif
 
+// rev
+NTSYSAPI
+NTSTATUS
+NTAPI
+RtlNotifyFeatureToggleUsage(
+    _In_ PRTL_FEATURE_USAGE_REPORT FeatureUsageReport,
+    _In_ RTL_FEATURE_ID FeatureId,
+    _In_ ULONG Flags
+);
+
+// rev
+NTSYSAPI
+ULONG
+NTAPI
+RtlGetFeatureTogglesChangeToken(
+    VOID
+);
+
 #if (NTDDI_VERSION >= NTDDI_WIN11)
 // rev
 NTSYSAPI
@@ -14302,13 +14613,20 @@ typedef enum _THREAD_STATE_CHANGE_TYPE THREAD_STATE_CHANGE_TYPE, * PTHREAD_STATE
 NTSYSAPI
 NTSTATUS
 NTAPI
+RtlWow64ChangeProcessState(
+    _In_ HANDLE ProcessStateChangeHandle,
+    _In_ HANDLE ProcessHandle,
+    _In_ PROCESS_STATE_CHANGE_TYPE StateChangeType
+);
+
+// rev
+NTSYSAPI
+NTSTATUS
+NTAPI
 RtlWow64ChangeThreadState(
     _In_ HANDLE ThreadStateChangeHandle,
     _In_ HANDLE ThreadHandle,
-    _In_ THREAD_STATE_CHANGE_TYPE StateChangeType,
-    _In_opt_ PVOID ExtendedInformation,
-    _In_opt_ SIZE_T ExtendedInformationLength,
-    _In_opt_ ULONG64 Reserved
+    _In_ THREAD_STATE_CHANGE_TYPE StateChangeType
 );
 #endif // (NTDDI_VERSION >= NTDDI_WIN11)
 

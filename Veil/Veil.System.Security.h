@@ -75,8 +75,59 @@ VEIL_BEGIN()
 #define SE_CREATE_SYMBOLIC_LINK_PRIVILEGE   (35L)   // Required to create a symbolic link.
 #define SE_DELEGATE_SESSION_USER_IMPERSONATE_PRIVILEGE   (36L)  // Required to obtain an impersonation token for another user in the same session.
 #define SE_MAX_WELL_KNOWN_PRIVILEGE         (SE_DELEGATE_SESSION_USER_IMPERSONATE_PRIVILEGE)
-
 #endif // !_KERNEL_MODE
+
+//#define TokenUser                             ((TOKEN_INFORMATION_CLASS)1 ) // q: TOKEN_USER, SE_TOKEN_USER
+//#define TokenGroups                           ((TOKEN_INFORMATION_CLASS)2 ) // q: TOKEN_GROUPS
+//#define TokenPrivileges                       ((TOKEN_INFORMATION_CLASS)3 ) // q: TOKEN_PRIVILEGES
+//#define TokenOwner                            ((TOKEN_INFORMATION_CLASS)4 ) // q; s: TOKEN_OWNER
+//#define TokenPrimaryGroup                     ((TOKEN_INFORMATION_CLASS)5 ) // q; s: TOKEN_PRIMARY_GROUP
+//#define TokenDefaultDacl                      ((TOKEN_INFORMATION_CLASS)6 ) // q; s: TOKEN_DEFAULT_DACL
+//#define TokenSource                           ((TOKEN_INFORMATION_CLASS)7 ) // q: TOKEN_SOURCE
+//#define TokenType                             ((TOKEN_INFORMATION_CLASS)8 ) // q: TOKEN_TYPE
+//#define TokenImpersonationLevel               ((TOKEN_INFORMATION_CLASS)9 ) // q: SECURITY_IMPERSONATION_LEVEL
+//#define TokenStatistics                       ((TOKEN_INFORMATION_CLASS)10) // q: TOKEN_STATISTICS // 10
+//#define TokenRestrictedSids                   ((TOKEN_INFORMATION_CLASS)11) // q: TOKEN_GROUPS
+//#define TokenSessionId                        ((TOKEN_INFORMATION_CLASS)12) // q; s: ULONG (requires SeTcbPrivilege)
+//#define TokenGroupsAndPrivileges              ((TOKEN_INFORMATION_CLASS)13) // q: TOKEN_GROUPS_AND_PRIVILEGES
+//#define TokenSessionReference                 ((TOKEN_INFORMATION_CLASS)14) // s: ULONG (requires SeTcbPrivilege)
+//#define TokenSandBoxInert                     ((TOKEN_INFORMATION_CLASS)15) // q: ULONG
+//#define TokenAuditPolicy                      ((TOKEN_INFORMATION_CLASS)16) // q; s: TOKEN_AUDIT_POLICY (requires SeSecurityPrivilege/SeTcbPrivilege)
+//#define TokenOrigin                           ((TOKEN_INFORMATION_CLASS)17) // q; s: TOKEN_ORIGIN (requires SeTcbPrivilege)
+//#define TokenElevationType                    ((TOKEN_INFORMATION_CLASS)18) // q: TOKEN_ELEVATION_TYPE
+//#define TokenLinkedToken                      ((TOKEN_INFORMATION_CLASS)19) // q; s: TOKEN_LINKED_TOKEN (requires SeCreateTokenPrivilege)
+//#define TokenElevation                        ((TOKEN_INFORMATION_CLASS)20) // q: TOKEN_ELEVATION // 20
+//#define TokenHasRestrictions                  ((TOKEN_INFORMATION_CLASS)21) // q: ULONG
+//#define TokenAccessInformation                ((TOKEN_INFORMATION_CLASS)22) // q: TOKEN_ACCESS_INFORMATION
+//#define TokenVirtualizationAllowed            ((TOKEN_INFORMATION_CLASS)23) // q; s: ULONG (requires SeCreateTokenPrivilege)
+//#define TokenVirtualizationEnabled            ((TOKEN_INFORMATION_CLASS)24) // q; s: ULONG
+//#define TokenIntegrityLevel                   ((TOKEN_INFORMATION_CLASS)25) // q; s: TOKEN_MANDATORY_LABEL
+//#define TokenUIAccess                         ((TOKEN_INFORMATION_CLASS)26) // q; s: ULONG (requires SeTcbPrivilege)
+//#define TokenMandatoryPolicy                  ((TOKEN_INFORMATION_CLASS)27) // q; s: TOKEN_MANDATORY_POLICY (requires SeTcbPrivilege)
+//#define TokenLogonSid                         ((TOKEN_INFORMATION_CLASS)28) // q: TOKEN_GROUPS
+//#define TokenIsAppContainer                   ((TOKEN_INFORMATION_CLASS)29) // q: ULONG // since WIN8
+//#define TokenCapabilities                     ((TOKEN_INFORMATION_CLASS)30) // q: TOKEN_GROUPS // 30
+//#define TokenAppContainerSid                  ((TOKEN_INFORMATION_CLASS)31) // q: TOKEN_APPCONTAINER_INFORMATION
+//#define TokenAppContainerNumber               ((TOKEN_INFORMATION_CLASS)32) // q: ULONG
+//#define TokenUserClaimAttributes              ((TOKEN_INFORMATION_CLASS)33) // q: CLAIM_SECURITY_ATTRIBUTES_INFORMATION
+//#define TokenDeviceClaimAttributes            ((TOKEN_INFORMATION_CLASS)34) // q: CLAIM_SECURITY_ATTRIBUTES_INFORMATION
+//#define TokenRestrictedUserClaimAttributes    ((TOKEN_INFORMATION_CLASS)35) // q: CLAIM_SECURITY_ATTRIBUTES_INFORMATION
+//#define TokenRestrictedDeviceClaimAttributes  ((TOKEN_INFORMATION_CLASS)36) // q: CLAIM_SECURITY_ATTRIBUTES_INFORMATION
+//#define TokenDeviceGroups                     ((TOKEN_INFORMATION_CLASS)37) // q: TOKEN_GROUPS
+//#define TokenRestrictedDeviceGroups           ((TOKEN_INFORMATION_CLASS)38) // q: TOKEN_GROUPS
+//#define TokenSecurityAttributes               ((TOKEN_INFORMATION_CLASS)39) // q; s: TOKEN_SECURITY_ATTRIBUTES_[AND_OPERATION_]INFORMATION (requires SeTcbPrivilege)
+//#define TokenIsRestricted                     ((TOKEN_INFORMATION_CLASS)40) // q: ULONG // 40
+//#define TokenProcessTrustLevel                ((TOKEN_INFORMATION_CLASS)41) // q: TOKEN_PROCESS_TRUST_LEVEL // since WINBLUE
+//#define TokenPrivateNameSpace                 ((TOKEN_INFORMATION_CLASS)42) // q; s: ULONG (requires SeTcbPrivilege) // since THRESHOLD
+//#define TokenSingletonAttributes              ((TOKEN_INFORMATION_CLASS)43) // q: TOKEN_SECURITY_ATTRIBUTES_INFORMATION // since REDSTONE
+//#define TokenBnoIsolation                     ((TOKEN_INFORMATION_CLASS)44) // q: TOKEN_BNO_ISOLATION_INFORMATION // since REDSTONE2
+//#define TokenChildProcessFlags                ((TOKEN_INFORMATION_CLASS)45) // s: ULONG  (requires SeTcbPrivilege) // since REDSTONE3
+//#define TokenIsLessPrivilegedAppContainer     ((TOKEN_INFORMATION_CLASS)46) // q: ULONG // since REDSTONE5
+//#define TokenIsSandboxed                      ((TOKEN_INFORMATION_CLASS)47) // q: ULONG // since 19H1
+//#define TokenIsAppSilo                        ((TOKEN_INFORMATION_CLASS)48) // q: ULONG // since 22H2 // previously TokenOriginatingProcessTrustLevel // q: TOKEN_PROCESS_TRUST_LEVEL
+//#define TokenLoggingInformation               ((TOKEN_INFORMATION_CLASS)49) // TOKEN_LOGGING_INFORMATION // since 24H2
+//#define TokenLearningMode                     ((TOKEN_INFORMATION_CLASS)50) // since 25H2
+//#define MaxTokenInfoClass                     ((TOKEN_INFORMATION_CLASS)51)
 
 //
 // Authz

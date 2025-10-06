@@ -202,8 +202,8 @@
 #define NTDDI_WIN11_CU                      NTDDI_WIN10_CU  // Windows 10.0.25057-25236  / Copper
 #define NTDDI_WIN11_ZN                      0x0A00000E      // Windows 10.0.25246-25398  / Zinc
 #define NTDDI_WIN11_GA                      0x0A00000F      // Windows 10.0.25905-25941  / Gallium
-#define NTDDI_WIN11_GE                      0x0A000010      // Windows 10.0.25947-26100  / Germanium    / 24H2
-//#define NTDDI_WIN11_SE                      0x0A000011      // Windows 10.0.27788-?      / Selenium     / 25H2
+#define NTDDI_WIN11_GE                      0x0A000010      // Windows 10.0.25947-26200  / Germanium    / 24H2 25H2
+//#define NTDDI_WIN11_SE                      0x0A000011      // Windows 10.0.27788-?      / Selenium     / 
 
 // Fix WDK
 #define NTDDI_THRESHOLD                     NTDDI_WINTHRESHOLD
@@ -342,5 +342,6 @@ struct IUnknown;
 #include "Veil/Veil.System.SMBios.h"
 #include "Veil/Veil.System.WindowStation.h"
 #include "Veil/Veil.System.UserManagerService.h"
+#include "Veil/Veil.System.ThreadPool.h"
 
 #endif // _VEIL_

@@ -259,8 +259,8 @@ __kernel_entry W32KAPI
 WORD
 NTAPI
 NtUserSetClassWord(
-    _In_ HWND WindowHandle,
-    _In_ LONG nIndex,
+    _In_ HWND hWnd,
+    _In_ int nIndex,
     _In_ WORD wNewWord
 );
 
@@ -401,7 +401,7 @@ __kernel_entry W32KAPI
 BOOL
 NTAPI
 NtUserDestroyWindow(
-    _In_ HWND Window
+    _In_ HWND hWnd
 );
 
 #define FW_BOTH  0
@@ -440,23 +440,23 @@ __kernel_entry W32KAPI
 BOOL
 NTAPI
 NtUserShowWindow(
-    _In_ HWND WindowHandle,
-    _In_ LONG nCmdShow
+    _In_ HWND hWnd,
+    _In_ int nCmdShow
 );
 
 __kernel_entry W32KAPI
 BOOL
 NTAPI
 NtUserShowWindowAsync(
-    _In_ HWND WindowHandle,
-    _In_ LONG nCmdShow
+    _In_  HWND hWnd,
+    _In_  int nCmdShow
 );
 
 __kernel_entry W32KAPI
 NTSTATUS
 NTAPI
 NtUserSetForegroundWindowForApplication(
-    _In_ HWND WindowHandle
+    _In_  HWND hWnd
 );
 
 __kernel_entry W32KAPI
@@ -470,30 +470,30 @@ __kernel_entry W32KAPI
 HWND
 NTAPI
 NtUserSetActiveWindow(
-    _In_ HWND WindowHandle
+    _In_ HWND hWnd
 );
 
 __kernel_entry W32KAPI
 HWND
 NTAPI
 NtUserSetFocus(
-    _In_ HWND WindowHandle
+    _In_opt_ HWND hWnd
 );
 
 __kernel_entry W32KAPI
 BOOL
 NTAPI
 NtUserSetWindowPlacement(
-    _In_  HWND WindowHandle,
-    _Inout_ const WINDOWPLACEMENT* lpwndpl
+    _In_ HWND hWnd,
+    _In_ CONST WINDOWPLACEMENT * lpwndpl
 );
 
 __kernel_entry W32KAPI
 BOOL
 NTAPI
 NtUserGetWindowPlacement(
-    _In_ HWND WindowHandle,
-    _Inout_ PWINDOWPLACEMENT WindowPlacement
+    _In_ HWND hWnd,
+    _Inout_ WINDOWPLACEMENT * lpwndpl
 );
 
 __kernel_entry W32KAPI
@@ -514,33 +514,33 @@ __kernel_entry W32KAPI
 BOOL
 NTAPI
 NtUserMoveWindow(
-    _In_ HWND WindowHandle,
-    _In_ LONG X,
-    _In_ LONG Y,
-    _In_ LONG Width,
-    _In_ LONG Height,
-    _In_ BOOL Repaint
+    _In_ HWND hWnd,
+    _In_ int X,
+    _In_ int Y,
+    _In_ int nWidth,
+    _In_ int nHeight,
+    _In_ BOOL bRepaint
 );
 
 __kernel_entry W32KAPI
 BOOL
 NTAPI
 NtUserSetWindowPos(
-    _In_ HWND WindowHandle,
-    _In_ HWND WindowHandleInsertAfter,
-    _In_ LONG X,
-    _In_ LONG Y,
-    _In_ LONG cx,
-    _In_ LONG cy,
-    _In_ ULONG uFlags
+    _In_ HWND hWnd,
+    _In_opt_ HWND hWndInsertAfter,
+    _In_ int X,
+    _In_ int Y,
+    _In_ int cx,
+    _In_ int cy,
+    _In_ UINT uFlags
 );
 
 __kernel_entry W32KAPI
 WORD
 NTAPI
 NtUserSetWindowWord(
-    _In_ HWND WindowHandle,
-    _In_ LONG nIndex,
+    _In_ HWND hWnd,
+    _In_ int nIndex,
     _In_ WORD wNewWord
 );
 
@@ -548,8 +548,8 @@ __kernel_entry W32KAPI
 HWND
 NTAPI
 NtUserGetAncestor(
-    _In_ HWND WindowHandle,
-    _In_ ULONG gaFlags
+    _In_ HWND hwnd,
+    _In_ UINT gaFlags
 );
 
 __kernel_entry W32KAPI
@@ -580,16 +580,16 @@ __kernel_entry W32KAPI
 HWND
 NTAPI
 NtUserChildWindowFromPointEx(
-    _In_ HWND WindowHandle,
+    _In_ HWND hwnd,
     _In_ POINT pt,
-    _In_ ULONG flags
+    _In_ UINT flags
 );
 
 __kernel_entry W32KAPI
 HWND
 NTAPI
 NtUserRealChildWindowFromPoint(
-    _In_ HWND WindowHandleParent,
+    _In_ HWND hwndParent,
     _In_ POINT ptParentClientCoords
 );
 
@@ -599,9 +599,9 @@ NTAPI
 NtUserCalculatePopupWindowPosition(
     _In_ const POINT* anchorPoint,
     _In_ const SIZE* windowSize,
-    _In_ ULONG flags,
-    _Inout_ RECT* excludeRect,
-    _Inout_ RECT* popupWindowPosition
+    _In_ UINT /* TPM_XXX values */ flags,
+    _In_opt_ RECT* excludeRect,
+    _Out_ RECT* popupWindowPosition
 );
 
 //
@@ -612,17 +612,17 @@ __kernel_entry W32KAPI
 BOOL
 NTAPI
 NtUserGetLayeredWindowAttributes(
-    _In_ HWND WindowHandle,
-    _Out_opt_ COLORREF* Key,
-    _Out_opt_ PBYTE Alpha,
-    _Out_opt_ PULONG Flags
+    _In_ HWND hwnd,
+    _Out_opt_ COLORREF* pcrKey,
+    _Out_opt_ BYTE* pbAlpha,
+    _Out_opt_ DWORD* pdwFlags
 );
 
 __kernel_entry W32KAPI
 BOOL
 NTAPI
 NtUserSetLayeredWindowAttributes(
-    _In_ HWND WindowHandle,
+    _In_ HWND hwnd,
     _In_ COLORREF crKey,
     _In_ BYTE bAlpha,
     _In_ DWORD dwFlags
@@ -779,16 +779,16 @@ __kernel_entry W32KAPI
 HDC
 NTAPI
 NtUserGetDCEx(
-    _In_ HWND WindowHandle,
-    _In_ HRGN hrgnClip,
-    _In_ ULONG flags
+    _In_opt_ HWND hWnd,
+    _In_opt_ HRGN hrgnClip,
+    _In_ DWORD flags
 );
 
 __kernel_entry W32KAPI
 HDC
 NTAPI
 NtUserGetWindowDC(
-    _In_ HWND WindowHandle
+    _In_opt_ HWND hWnd
 );
 
 __kernel_entry W32KAPI
@@ -825,72 +825,127 @@ __kernel_entry W32KAPI
 BOOL
 NTAPI
 NtUserEndPaint(
-    _In_  HWND Window,
-    _In_  const PAINTSTRUCT* Paint
+    _In_ HWND hWnd,
+    _In_ CONST PAINTSTRUCT* lpPaint
 );
 
 __kernel_entry W32KAPI
 BOOL
 NTAPI
 NtUserPrintWindow(
-    _In_ HWND WindowHandle,
+    _In_ HWND hwnd,
     _In_ HDC hdcBlt,
-    _In_ ULONG nFlags
+    _In_ UINT nFlags
 );
 
 __kernel_entry W32KAPI
-HRGN
+int
 NTAPI
 NtUserExcludeUpdateRgn(
     _In_ HDC hDC,
-    _In_ HWND WindowHandle
+    _In_ HWND hWnd
 );
 
 __kernel_entry W32KAPI
 BOOL
 NTAPI
 NtUserDrawAnimatedRects(
-    _In_ HWND WindowHandle,
+    _In_opt_ HWND hwnd,
     _In_ int idAni,
-    _In_ const RECT* lprcFrom,
-    _In_ const RECT* lprcTo
+    _In_ CONST RECT* lprcFrom,
+    _In_ CONST RECT* lprcTo
 );
 
 __kernel_entry W32KAPI
 BOOL
 NTAPI
 NtUserValidateRect(
-    _In_ HWND WindowHandle,
-    _In_ const RECT* Rect
+    _In_opt_ HWND hWnd,
+    _In_opt_ CONST RECT* lpRect
 );
 
 __kernel_entry W32KAPI
 BOOL
 NTAPI
 NtUserInvalidateRect(
-    _In_ HWND WindowHandle,
-    _In_ const RECT* Rect,
-    _In_ BOOL Erase
+    _In_opt_ HWND hWnd,
+    _In_opt_ CONST RECT* lpRect,
+    _In_ BOOL bErase
 );
 
 __kernel_entry W32KAPI
 BOOL
 NTAPI
 NtUserInvalidateRgn(
-    _In_ HWND WindowHandle,
-    _In_ HRGN hRgn,
-    _In_ BOOL Erase
+    _In_ HWND hWnd,
+    _In_opt_ HRGN hRgn,
+    _In_ BOOL bErase
 );
 
 __kernel_entry W32KAPI
 BOOL
 NTAPI
 NtUserRedrawWindow(
-    _In_ HWND WindowHandle,
-    _In_ const PRECT lprcUpdate,
-    _In_ HRGN hrgnUpdate,
-    _In_ ULONG flags
+    _In_opt_ HWND hWnd,
+    _In_opt_ CONST RECT* lprcUpdate,
+    _In_opt_ HRGN hrgnUpdate,
+    _In_ UINT flags
 );
+
+__kernel_entry W32KAPI
+BOOL
+WINAPI
+NtUserLockWindowUpdate(
+    _In_opt_ HWND hWndLock
+);
+
+//
+// Controls
+//
+
+__kernel_entry W32KAPI
+BOOL
+NTAPI
+NtUserGetComboBoxInfo(
+    _In_ HWND hwndCombo,
+    _Inout_ PCOMBOBOXINFO pcbi
+);
+
+__kernel_entry W32KAPI
+ULONG
+NTAPI
+NtUserGetListBoxInfo(
+    _In_ HWND hwnd
+);
+
+__kernel_entry W32KAPI
+BOOL
+NTAPI
+NtUserGetMenuBarInfo(
+    _In_ HWND hwnd,
+    _In_ LONG idObject,
+    _In_ LONG idItem,
+    _Inout_ PMENUBARINFO pmbi
+);
+
+__kernel_entry W32KAPI
+BOOL
+NTAPI
+NtUserGetTitleBarInfo(
+    _In_ HWND hwnd,
+    _Inout_ PTITLEBARINFO pti
+);
+
+#if (NTDDI >= NTDDI_WIN10_RS2)
+__kernel_entry W32KAPI
+BOOL
+NTAPI
+NtUserSetDialogControlDpiChangeBehavior(
+    _In_ HWND hWnd,
+    _In_ DIALOG_CONTROL_DPI_CHANGE_BEHAVIORS mask,
+    _In_ DIALOG_CONTROL_DPI_CHANGE_BEHAVIORS values
+);
+#endif // NTDDI >= NTDDI_WIN10_RS2
 
 //
 // Menu
@@ -907,32 +962,32 @@ __kernel_entry W32KAPI
 BOOL
 NTAPI
 NtUserDeleteMenu(
-    _In_ HMENU MenuHandle,
-    _In_ ULONG uPosition,
-    _In_ ULONG uFlags
+    _In_ HMENU hMenu,
+    _In_ UINT uPosition,
+    _In_ UINT uFlags
 );
 
 __kernel_entry W32KAPI
 BOOL
 NTAPI
 NtUserDestroyMenu(
-    _In_ HMENU MenuHandle
+    _In_ HMENU hMenu
 );
 
 __kernel_entry W32KAPI
 BOOL
 NTAPI
 NtUserRemoveMenu(
-    _In_ HMENU MenuHandle,
-    _In_ ULONG Position,
-    _In_ ULONG Flags
+    _In_ HMENU hMenu,
+    _In_ UINT uPosition,
+    _In_ UINT uFlags
 );
 
 __kernel_entry W32KAPI
 HMENU
 NTAPI
 NtUserGetSystemMenu(
-    _In_ HWND WindowHandle,
+    _In_ HWND hWnd,
     _In_ BOOL bRevert
 );
 
@@ -940,28 +995,28 @@ __kernel_entry W32KAPI
 BOOL
 NTAPI
 NtUserGetMenuItemRect(
-    _In_ HWND WindowHandle,
-    _In_ HMENU MenuHandle,
-    _In_ ULONG MenuIndex,
-    _In_ LPRECT MenuRect
+    _In_opt_ HWND hWnd,
+    _In_ HMENU hMenu,
+    _In_ UINT uItem,
+    _Out_ LPRECT lprcItem
 );
 
 __kernel_entry W32KAPI
 BOOL
 NTAPI
 NtUserHiliteMenuItem(
-    _In_ HWND WindowHandle,
-    _In_ HMENU MenuHandle,
-    _In_ ULONG IDHiliteItem,
-    _In_ ULONG Hilite
+    _In_ HWND hWnd,
+    _In_ HMENU hMenu,
+    _In_ UINT uIDHiliteItem,
+    _In_ UINT uHilite
 );
 
 __kernel_entry W32KAPI
-LONG
+int
 NTAPI
 NtUserMenuItemFromPoint(
-    _In_ HWND WindowHandle,
-    _In_ HMENU MenuHandle,
+    _In_opt_ HWND hWnd,
+    _In_ HMENU hMenu,
     _In_ POINT ptScreen
 );
 
@@ -969,49 +1024,29 @@ __kernel_entry W32KAPI
 BOOL
 NTAPI
 NtUserTrackPopupMenuEx(
-    _In_ HMENU MenuHandle,
-    _In_ ULONG uFlags,
-    _In_ LONG x,
-    _In_ LONG y,
-    _In_ HWND WindowHandle,
-    _In_ LPTPMPARAMS lptpm
-);
-
-//
-// Controls
-//
-
-__kernel_entry W32KAPI
-BOOL
-NTAPI
-NtUserGetComboBoxInfo(
-    _In_ HWND WindowHandleCombo,
-    _Inout_ PCOMBOBOXINFO pcbi
-);
-
-__kernel_entry W32KAPI
-ULONG
-NTAPI
-NtUserGetListBoxInfo(
-    _In_ HWND WindowHandle
+    _In_ HMENU hMenu,
+    _In_ UINT uFlags,
+    _In_ int x,
+    _In_ int y,
+    _In_ HWND hwnd,
+    _In_opt_ LPTPMPARAMS lptpm
 );
 
 __kernel_entry W32KAPI
 BOOL
 NTAPI
-NtUserGetMenuBarInfo(
-    _In_ HWND WindowHandle,
-    _In_ LONG idObject,
-    _In_ LONG idItem,
-    _In_ PMENUBARINFO pmbi
+NtUserSetMenuDefaultItem(
+    _In_ HMENU hMenu,
+    _In_ UINT uItem,
+    _In_ UINT fByPos
 );
 
 __kernel_entry W32KAPI
 BOOL
 NTAPI
-NtUserGetTitleBarInfo(
-    _In_ HWND WindowHandle,
-    _In_ PTITLEBARINFO pti
+NtUserSetMenuContextHelpId(
+    _In_ HMENU,
+    _In_ DWORD
 );
 
 //
@@ -1022,7 +1057,7 @@ __kernel_entry W32KAPI
 BOOL
 NTAPI
 NtUserDragDetect(
-    _In_ HWND WindowHandle,
+    _In_ HWND hwnd,
     _In_ POINT pt
 );
 
@@ -1030,11 +1065,11 @@ __kernel_entry W32KAPI
 ULONG
 NTAPI
 NtUserDragObject(
-    _In_ HWND WindowHandleParent,
-    _In_ HWND WindowHandleFrom,
-    _In_ ULONG fmt,
+    _In_ HWND hwndParent,
+    _In_ HWND hwndFrom,
+    _In_ UINT fmt,
     _In_ ULONG_PTR data,
-    _In_ HCURSOR hcur
+    _In_opt_ HCURSOR hcur
 );
 
 //
@@ -1071,14 +1106,18 @@ typedef struct tagRAWINPUTDEVICELIST
 #endif
 
 __kernel_entry W32KAPI
-UINT NTAPI NtUserGetRawInputDeviceList(
-    _Out_writes_opt_(*RawInputDeviceCount) PRAWINPUTDEVICELIST RawInputDeviceList,
-    _Inout_ PUINT RawInputDeviceCount,
-    _In_ UINT RawInputDeviceSize
+UINT
+NTAPI
+NtUserGetRawInputDeviceList(
+    _Out_writes_opt_(*puiNumDevices) PRAWINPUTDEVICELIST pRawInputDeviceList,
+    _Inout_ PUINT puiNumDevices,
+    _In_ UINT cbSize
 );
 
 __kernel_entry W32KAPI
-UINT NTAPI NtUserGetRawInputDeviceInfo(
+UINT
+NTAPI
+NtUserGetRawInputDeviceInfo(
     _In_opt_ HANDLE Handle,
     _In_ UINT Command,
     _Inout_updates_bytes_to_opt_(*Size, *Size) LPVOID Data,
@@ -1098,39 +1137,41 @@ typedef CONST RAWINPUTDEVICE* PCRAWINPUTDEVICE;
 #endif
 
 __kernel_entry W32KAPI
-BOOL NTAPI NtUserRegisterRawInputDevices(
-    _In_reads_(NumDevices) PCRAWINPUTDEVICE RawInputDevices,
-    _In_ UINT NumDevices,
-    _In_ UINT Size
+BOOL
+NTAPI
+NtUserRegisterRawInputDevices(
+    _In_reads_(uiNumDevices) PCRAWINPUTDEVICE pRawInputDevices,
+    _In_ UINT uiNumDevices,
+    _In_ UINT cbSize
 );
 
 __kernel_entry W32KAPI
-ULONG
+UINT
 NTAPI
 NtUserGetRegisteredRawInputDevices(
-    _Out_opt_ PRAWINPUTDEVICE RawInputDevices,
-    _Inout_ PULONG RawInputDeviceCount,
-    _In_ ULONG RawInputDeviceSize
+    _Out_writes_opt_(*puiNumDevices) PRAWINPUTDEVICE pRawInputDevices,
+    _Inout_ PUINT puiNumDevices,
+    _In_ UINT cbSize
 );
 
 __kernel_entry W32KAPI
-ULONG
+UINT
 NTAPI
 NtUserGetRawInputData(
-    _In_ HRAWINPUT RawInputData,
-    _In_ ULONG RawInputCommand,
-    _Out_opt_ PVOID RawInputBuffer,
-    _Inout_ PULONG RawInputBufferSize,
-    _In_ ULONG RawInputHeaderSize
+    _In_ HRAWINPUT hRawInput,
+    _In_ UINT uiCommand,
+    _Out_writes_bytes_to_opt_(*pcbSize, return) LPVOID pData,
+    _Inout_ PUINT pcbSize,
+    _In_ UINT cbSizeHeader
 );
 
 __kernel_entry W32KAPI
-ULONG
+UINT
 NTAPI
 NtUserSendInput(
-    _In_ ULONG cInputs,
-    _In_ LPINPUT pInputs,
-    _In_ LONG cbSize
+    _In_ UINT cInputs,                      // number of input in the array
+    _In_reads_(cInputs) LPINPUT pInputs,    // array of inputs
+    _In_ int cbSize                         // sizeof(INPUT)
 );
 
 //
@@ -1141,39 +1182,33 @@ __kernel_entry W32KAPI
 HWND
 NTAPI
 NtUserSetCapture(
-    _In_ HWND WindowHandle
+    _In_ HWND hWnd
 );
 
 __kernel_entry W32KAPI
-LONG
+int
 NTAPI
 NtUserGetMouseMovePointsEx(
-    _In_ ULONG MouseMovePointsSize,
-    _In_ LPMOUSEMOVEPOINT InputBuffer,
-    _In_ LPMOUSEMOVEPOINT OutputBuffer,
-    _In_ LONG OutputBufferCount,
-    _In_ ULONG Resolution
+    _In_ UINT cbSize,
+    _In_ LPMOUSEMOVEPOINT lppt,
+    _Out_writes_(nBufPoints) LPMOUSEMOVEPOINT lpptBuf,
+    _In_ int nBufPoints,
+    _In_ DWORD resolution
 );
 
 __kernel_entry W32KAPI
 BOOL
 NTAPI
 NtUserTrackMouseEvent(
-    _In_ LPTRACKMOUSEEVENT lpEventTrack
+    _Inout_ LPTRACKMOUSEEVENT lpEventTrack
 );
 
 __kernel_entry W32KAPI
-BOOL
+UINT
 NTAPI
-NtUserIsTouchWindow(
-    _In_ HWND WindowHandle,
-    _In_ PULONG Flags
+NtUserGetDoubleClickTime(
+    VOID
 );
-
-__kernel_entry W32KAPI
-ULONG
-NTAPI
-NtUserGetDoubleClickTime();
 
 __kernel_entry W32KAPI
 BOOL
@@ -1184,10 +1219,242 @@ NtUserSetCursorPos(
 );
 
 __kernel_entry W32KAPI
-LONG
+int
 NTAPI
 NtUserShowCursor(
     _In_ BOOL bShow
+);
+
+__kernel_entry W32KAPI
+BOOL
+NTAPI
+NtUserLogicalToPhysicalPoint(
+    _In_ HWND hWnd,
+    _Inout_ LPPOINT lpPoint
+);
+
+__kernel_entry W32KAPI
+BOOL
+NTAPI
+NtUserPhysicalToLogicalPoint(
+    _In_ HWND hWnd,
+    _Inout_ LPPOINT lpPoint
+);
+
+__kernel_entry W32KAPI
+BOOL
+NTAPI
+NtUserLogicalToPerMonitorDPIPhysicalPoint(
+    _In_opt_ HWND hWnd,
+    _Inout_ LPPOINT lpPoint
+);
+
+__kernel_entry W32KAPI
+BOOL
+NTAPI
+NtUserPerMonitorDPIPhysicalToLogicalPoint(
+    _In_opt_ HWND hWnd,
+    _Inout_ LPPOINT lpPoint);
+
+//
+// Touch
+//
+
+__kernel_entry W32KAPI
+BOOL
+NTAPI
+NtUserIsTouchWindow(
+    _In_ HWND hwnd,
+    _Out_opt_ PULONG pulFlags
+);
+
+__kernel_entry W32KAPI
+BOOL
+NTAPI
+NtUserRegisterTouchHitTestingWindow(
+    _In_ HWND hwnd,
+    _In_ ULONG value
+);
+
+//
+// Keyboard
+//
+
+__kernel_entry W32KAPI
+_Check_return_
+BOOL
+NTAPI
+NtUserGetKeyboardState(
+    _Out_writes_(256) PBYTE lpKeyState
+);
+
+__kernel_entry W32KAPI
+BOOL
+NTAPI
+NtUserSetKeyboardState(
+    _In_reads_(256) LPBYTE lpKeyState
+);
+
+//
+// Keyboard Layout
+//
+
+__kernel_entry W32KAPI
+int
+NTAPI
+NtUserGetKeyboardLayoutList(
+    _In_ int nBuff,
+    _Out_writes_to_opt_(nBuff, return) HKL FAR* lpList
+);
+
+
+//
+// Pointer
+//
+
+__kernel_entry W32KAPI
+BOOL
+NTAPI
+NtUserDiscardPointerFrameMessages(
+    _In_ UINT32 pointerId
+);
+
+__kernel_entry W32KAPI
+BOOL
+NTAPI
+NtUserEnableMouseInPointer(
+    _In_ BOOL fEnable
+);
+
+__kernel_entry W32KAPI
+BOOL
+NTAPI
+NtUserIsMouseInPointerEnabled(
+    VOID
+);
+
+__kernel_entry W32KAPI
+BOOL
+NTAPI
+NtUserEnableMouseInPointerForThread(
+    VOID
+);
+
+__kernel_entry W32KAPI
+BOOL
+NTAPI
+NtUserGetPointerCursorId(
+    _In_ UINT32 pointerId,
+    _Out_ UINT32 * cursorId
+);
+
+__kernel_entry W32KAPI
+BOOL
+NTAPI
+NtUserGetPointerDevices(
+    _Inout_ UINT32 * deviceCount,
+    _Out_writes_opt_(*deviceCount) POINTER_DEVICE_INFO * pointerDevices
+);
+
+__kernel_entry W32KAPI
+BOOL
+NTAPI
+NtUserGetPointerDevice(
+    _In_ HANDLE device,
+    _Out_writes_(1) POINTER_DEVICE_INFO * pointerDevice
+);
+
+__kernel_entry W32KAPI
+BOOL
+NTAPI
+NtUserGetPointerDeviceCursors(
+    _In_ HANDLE device,
+    _Inout_ UINT32 * cursorCount,
+    _Out_writes_opt_(*cursorCount) POINTER_DEVICE_CURSOR_INFO * deviceCursors
+);
+
+__kernel_entry W32KAPI
+BOOL
+NTAPI
+NtUserGetPointerDeviceRects(
+    _In_ HANDLE device,
+    _Out_writes_(1) RECT * pointerDeviceRect,
+    _Out_writes_(1) RECT * displayRect
+);
+
+__kernel_entry W32KAPI
+BOOL
+NTAPI
+NtUserGetPointerInputTransform(
+    _In_ UINT32 pointerId,
+    _In_ UINT32 historyCount,
+    _Out_writes_(historyCount) INPUT_TRANSFORM * inputTransform
+);
+
+__kernel_entry W32KAPI
+BOOL
+NTAPI
+NtUserGetPointerType(
+    _In_ UINT32 pointerId,
+    _Out_ POINTER_INPUT_TYPE * pointerType
+);
+
+__kernel_entry W32KAPI
+BOOL
+NTAPI
+NtUserGetRawPointerDeviceData(
+    _In_ UINT32 pointerId,
+    _In_ UINT32 historyCount,
+    _In_ UINT32 propertiesCount,
+    _In_reads_(propertiesCount) POINTER_DEVICE_PROPERTY * pProperties,
+    _Out_writes_(historyCount * propertiesCount) LONG * pValues
+);
+
+__kernel_entry W32KAPI
+BOOL
+NTAPI
+NtUserRegisterPointerDeviceNotifications(
+    _In_ HWND window,
+    _In_ BOOL notifyRange
+);
+
+#if (NTDDI_VERSION >= NTDDI_WIN10_RS5)
+__kernel_entry W32KAPI
+VOID
+NTAPI
+NtUserRemoveInjectionDevice(
+    _In_ HSYNTHETICPOINTERDEVICE device
+);
+#endif // NTDDI_VERSION >= NTDDI_WIN10_RS5
+
+//
+// Gesture
+//
+
+__kernel_entry W32KAPI
+BOOL
+NTAPI
+NtUserSetGestureConfig(
+    _In_ HWND hwnd,                                     // window for which configuration is specified
+    _In_ DWORD dwReserved,                              // reserved, must be 0
+    _In_ UINT cIDs,                                     // count of GESTURECONFIG structures
+    _In_reads_(cIDs) PGESTURECONFIG pGestureConfig,     // array of GESTURECONFIG structures, dwIDs will be processed in the
+    // order specified and repeated occurances will overwrite previous ones
+    _In_ UINT cbSize                                    // sizeof(GESTURECONFIG)
+);
+
+__kernel_entry W32KAPI
+BOOL
+NTAPI
+NtUserGetGestureConfig(
+    _In_ HWND hwnd,                                     // window for which configuration is required
+    _In_ DWORD dwReserved,                              // reserved, must be 0
+    _In_ DWORD dwFlags,                                 // see GCF_* flags
+    _In_ PUINT pcIDs,                                   // *pcIDs contains the size, in number of GESTURECONFIG structures,
+    // of the buffer pointed to by pGestureConfig
+    _Inout_updates_(*pcIDs) PGESTURECONFIG pGestureConfig,
+    // pointer to buffer to receive the returned array of GESTURECONFIG structures
+    _In_ UINT cbSize                                    // sizeof(GESTURECONFIG)
 );
 
 //
@@ -1198,10 +1465,10 @@ __kernel_entry W32KAPI
 BOOL
 NTAPI
 NtUserChangeWindowMessageFilterEx(
-    _In_ HWND WindowHandle,
-    _In_ ULONG message,
-    _In_ ULONG action,
-    _Inout_ PCHANGEFILTERSTRUCT pChangeFilterStruct
+    _In_ HWND hwnd,                                         // Window
+    _In_ UINT message,                                      // WM_ message
+    _In_ DWORD action,                                      // Message filter action value
+    _Inout_opt_ PCHANGEFILTERSTRUCT pChangeFilterStruct     // Optional
 );
 
 __kernel_entry W32KAPI
@@ -1231,7 +1498,14 @@ __kernel_entry W32KAPI
 BOOL
 NTAPI
 NtUserGetCurrentInputMessageSource(
-    _Inout_ INPUT_MESSAGE_SOURCE* InputMessageSource
+    _Out_ INPUT_MESSAGE_SOURCE* InputMessageSource
+);
+
+__kernel_entry W32KAPI
+BOOL
+NTAPI
+NtUserGetCIMSSM(
+    _Out_ INPUT_MESSAGE_SOURCE* inputMessageSource
 );
 
 __kernel_entry W32KAPI
@@ -1248,6 +1522,24 @@ NtUserSetMessageExtraInfo(
     _In_ LPARAM lParam
 );
 
+#if (NTDDI_VERSION >= NTDDI_WIN11_GE)
+__kernel_entry W32KAPI
+BOOL
+NTAPI
+NtUserEnterMoveSizeLoop(
+    _In_ HWND hwnd,
+    _In_ POINT ptCursor,
+    _In_ MOVESIZE_OPERATION moveSizeCode
+);
+#endif // NTDDI_VERSION >= NTDDI_WIN11_GE
+
+__kernel_entry W32KAPI
+BOOL
+NTAPI
+NtUserWaitMessage(
+    VOID
+);
+
 //
 // Security
 //
@@ -1256,9 +1548,9 @@ __kernel_entry W32KAPI
 BOOL
 NTAPI
 NtUserUserHandleGrantAccess(
-    _In_ HANDLE UserHandle,
-    _In_ HANDLE Job,
-    _In_ BOOL Grant
+    _In_ HANDLE hUserHandle,
+    _In_ HANDLE hJob,
+    _In_ BOOL   bGrant
 );
 
 __kernel_entry W32KAPI
@@ -1382,11 +1674,11 @@ __kernel_entry W32KAPI
 BOOL
 NTAPI
 NtUserGetCaretPos(
-    _In_ LPPOINT lpPoint
+    _Out_ LPPOINT lpPoint
 );
 
 __kernel_entry W32KAPI
-ULONG
+UINT
 NTAPI
 NtUserGetCaretBlinkTime(
     VOID
@@ -1426,24 +1718,24 @@ NtUserCreateWindowStation(
 );
 
 __kernel_entry W32KAPI
-HWND
+BOOL
+NTAPI
+NtUserCloseWindowStation(
+    _In_ HWINSTA hWinSta
+);
+
+__kernel_entry W32KAPI
+BOOL
+NTAPI
+NtUserSetProcessWindowStation(
+    _In_ HWINSTA hWinSta
+);
+
+__kernel_entry W32KAPI
+HWINSTA
 NTAPI
 NtUserGetProcessWindowStation(
     VOID
-);
-
-__kernel_entry W32KAPI
-LOGICAL
-NTAPI
-NtUserCloseWindowStation(
-    _In_ HWINSTA WindowStationHandle
-);
-
-__kernel_entry W32KAPI
-LOGICAL
-NTAPI
-NtUserSetProcessWindowStation(
-    _In_ HWINSTA WindowStationHandle
 );
 
 NTSYSAPI
@@ -1487,27 +1779,6 @@ NtUserBuildPropList(
 );
 
 //
-// Accelerator Table
-//
-
-__kernel_entry W32KAPI
-LONG
-NTAPI
-NtUserCopyAcceleratorTable(
-    _In_ HACCEL hAccelSrc,
-    _In_ LPACCEL lpAccelDst,
-    _In_ LONG cAccelEntries
-);
-
-__kernel_entry W32KAPI
-HACCEL
-NTAPI
-NtUserCreateAcceleratorTable(
-    _In_ LPACCEL paccel,
-    _In_ LONG cAccel
-);
-
-//
 // Desktop
 //
 
@@ -1524,7 +1795,7 @@ __kernel_entry W32KAPI
 BOOL
 NTAPI
 NtUserCloseDesktop(
-    _In_ HDESK DesktopHandle
+    _In_ HDESK hDesktop
 );
 
 __kernel_entry W32KAPI
@@ -1540,16 +1811,16 @@ __kernel_entry W32KAPI
 HDESK
 NTAPI
 NtUserOpenInputDesktop(
-    _In_ ULONG Flags,
-    _In_ BOOL Inherit,
-    _In_ ACCESS_MASK DesiredAccess
+    _In_ ULONG dwFlags,
+    _In_ BOOL fInherit,
+    _In_ ACCESS_MASK dwDesiredAccess
 );
 
 __kernel_entry W32KAPI
 HDESK
 NTAPI
 NtUserGetThreadDesktop(
-    _In_ ULONG ThreadId
+    _In_ ULONG dwThreadId
 );
 
 __kernel_entry W32KAPI
@@ -1574,6 +1845,20 @@ NtUserBuildHwndList(
 );
 
 //
+// UserObject (WindowStation & Desktop)
+//
+
+__kernel_entry W32KAPI
+BOOL
+NTAPI
+NtUserGetObjectInformation(
+    _In_ HANDLE hObj,
+    _In_ int nIndex,
+    _Out_writes_bytes_opt_(nLength) PVOID pvInfo,
+    _In_ DWORD nLength,
+    _Out_opt_ LPDWORD lpnLengthNeeded);
+
+//
 // Monitors
 //
 
@@ -1581,8 +1866,8 @@ __kernel_entry W32KAPI
 BOOL
 NTAPI
 NtUserEnumDisplayMonitors(
-    _In_ HDC hdc,
-    _In_ LPCRECT lprcClip,
+    _In_opt_ HDC hdc,
+    _In_opt_ LPCRECT lprcClip,
     _In_ MONITORENUMPROC lpfnEnum,
     _In_ LPARAM dwData
 );
@@ -1591,7 +1876,23 @@ __kernel_entry W32KAPI
 BOOL
 NTAPI
 NtUserGetDisplayAutoRotationPreferences(
-    _In_ ORIENTATION_PREFERENCE* pOrientation
+    _Out_ ORIENTATION_PREFERENCE * pOrientation
+);
+
+__kernel_entry W32KAPI
+BOOL
+NTAPI
+NtUserGetDisplayAutoRotationPreferencesByProcessId(
+    _In_ DWORD dwProcessId,
+    _Out_ ORIENTATION_PREFERENCE * pOrientation,
+    _Out_ BOOL * fRotateScreen
+);
+
+__kernel_entry W32KAPI
+BOOL
+NTAPI
+NtUserSetDisplayAutoRotationPreferences(
+    _In_ ORIENTATION_PREFERENCE orientation
 );
 
 __kernel_entry W32KAPI
@@ -1601,6 +1902,57 @@ NtUserLockWorkStation(
     VOID
 );
 
+#if (NTDDI_VERSION >= NTDDI_WIN11_GE)
+__kernel_entry W32KAPI
+BOOL
+NTAPI
+NtUserRegisterCloakedNotification(
+    _In_ HWND hwnd,
+    _In_ BOOL fRegister
+);
+#endif // NTDDI_VERSION >= NTDDI_WIN11_GE
+
+//
+// Display Affinity
+//
+
+__kernel_entry W32KAPI
+BOOL
+NTAPI
+NtUserGetWindowDisplayAffinity(
+    _In_ HWND hWnd,
+    _Out_ DWORD* pdwAffinity
+);
+
+__kernel_entry W32KAPI
+BOOL
+NTAPI
+NtUserSetWindowDisplayAffinity(
+    _In_ HWND hWnd,
+    _In_ DWORD dwAffinity
+);
+
+//
+// Accelerator Table
+//
+
+__kernel_entry W32KAPI
+HACCEL
+NTAPI
+NtUserCreateAcceleratorTable(
+    _In_reads_(cAccel) LPACCEL paccel,
+    _In_ int cAccel
+);
+
+__kernel_entry W32KAPI
+int
+NTAPI
+NtUserCopyAcceleratorTable(
+    _In_ HACCEL hAccelSrc,
+    _Out_writes_to_opt_(cAccelEntries, return) LPACCEL lpAccelDst,
+    _In_ int cAccelEntries
+);
+
 //
 // Cursor & ICON
 //
@@ -1608,27 +1960,29 @@ NtUserLockWorkStation(
 __kernel_entry W32KAPI
 HCURSOR
 NTAPI
-NtUserGetCursor();
+NtUserGetCursor(
+    VOID
+);
 
 __kernel_entry W32KAPI
 BOOL
 NTAPI
 NtUserGetClipCursor(
-    _In_ LPRECT lpRect
+    _Out_ LPRECT lpRect
 );
 
 __kernel_entry W32KAPI
 BOOL
 NTAPI
 NtUserClipCursor(
-    _In_ const RECT* lpRect
+    _In_opt_ const RECT* lpRect
 );
 
 __kernel_entry W32KAPI
 BOOL
 NTAPI
 NtUserGetCursorInfo(
-    _In_ PCURSORINFO pci
+    _Inout_ PCURSORINFO pci
 );
 
 __kernel_entry W32KAPI
@@ -1661,10 +2015,10 @@ __kernel_entry W32KAPI
 ULONG_PTR
 NTAPI
 NtUserSetTimer(
-    _In_ HWND WindowHandle,
-    _In_ ULONG_PTR nIDEvent,
-    _In_ ULONG uElapse,
-    _In_ TIMERPROC lpTimerFunc,
+    _In_opt_ HWND hWnd,
+    _In_ UINT_PTR nIDEvent,
+    _In_ UINT uElapse,
+    _In_opt_ TIMERPROC lpTimerFunc,
     _In_ ULONG uToleranceDelay
 );
 
@@ -1672,24 +2026,13 @@ __kernel_entry W32KAPI
 BOOL
 NTAPI
 NtUserKillTimer(
-    _In_ HWND WindowHandle,
-    _In_ ULONG_PTR IDEvent
+    _In_opt_ HWND hWnd,
+    _In_ UINT_PTR uIDEvent
 );
 
 //
 // GUI Object
 //
-
-__kernel_entry W32KAPI
-BOOL
-NTAPI
-NtUserGetObjectInformation(
-    _In_ HANDLE ObjectHandle,
-    _In_ LONG Index,
-    _In_ PVOID Info,
-    _In_ ULONG Length,
-    _In_ PULONG LengthNeeded
-);
 
 #ifndef GR_GDIOBJECTS
 #define GR_GDIOBJECTS 0
@@ -1708,7 +2051,7 @@ __kernel_entry W32KAPI
 ULONG
 NTAPI
 NtUserGetGuiResources(
-    _In_ HANDLE ProcessHandle,
+    _In_ HANDLE hProcess,
     _In_ ULONG uiFlags
 );
 
@@ -1721,7 +2064,7 @@ BOOL
 NTAPI
 NtUserGetGUIThreadInfo(
     _In_ ULONG idThread,
-    _In_ PGUITHREADINFO pgui
+    _Inout_ PGUITHREADINFO pgui
 );
 
 typedef enum _USERTHREADINFOCLASS USERTHREADINFOCLASS;
@@ -1755,18 +2098,18 @@ __kernel_entry W32KAPI
 BOOL
 NTAPI
 NtUserRegisterHotKey(
-    _In_ HWND WindowHandle,
-    _In_ LONG id,
-    _In_ ULONG fsModifiers,
-    _In_ ULONG vk
+    _In_opt_ HWND hWnd,
+    _In_ int id,
+    _In_ UINT fsModifiers,
+    _In_ UINT vk
 );
 
 __kernel_entry W32KAPI
 BOOL
 NTAPI
 NtUserUnregisterHotKey(
-    _In_ HWND WindowHandle,
-    _In_ LONG id
+    _In_opt_ HWND hWnd,
+    _In_ int id
 );
 
 //
@@ -1777,7 +2120,7 @@ __kernel_entry W32KAPI
 BOOL
 NTAPI
 NtUserSetProcessRestrictionExemption(
-    _In_ BOOL EnableExemption
+    _In_ BOOL fEnableExemption
 );
 
 //
@@ -1789,13 +2132,6 @@ HWND
 NTAPI
 NtUserShellForegroundBoostProcess(
     _In_ HANDLE ProcessHandle,
-    _In_ HWND WindowHandle
-);
-
-__kernel_entry W32KAPI
-ULONG
-NTAPI
-NtUserSetAdditionalForegroundBoostProcesses(
     _In_ HWND WindowHandle
 );
 
@@ -1814,16 +2150,16 @@ __kernel_entry W32KAPI
 BOOL
 NTAPI
 NtUserShutdownReasonDestroy(
-    _In_ HWND WindowHandle
+    _In_ HWND hWnd
 );
 
 __kernel_entry W32KAPI
 BOOL
 NTAPI
 NtUserShutdownBlockReasonQuery(
-    _In_ HWND WindowHandle,
-    _Out_ LPWSTR pwszBuff,
-    _Inout_ PULONG pcchBuff
+    _In_ HWND hWnd,
+    _Out_writes_opt_(*pcchBuff) LPWSTR pwszBuff,
+    _Inout_ DWORD* pcchBuff
 );
 
 //
@@ -1868,24 +2204,132 @@ NtUserDisableProcessWindowsGhosting(
 );
 
 //
-// Misc
+// InterceptWindow
+//
+
+#if (NTDDI_VERSION >= NTDDI_WIN11_GE)
+__kernel_entry W32KAPI
+BOOL
+NTAPI
+NtUserConvertToInterceptWindow(
+    _In_ HWND topLevelWindow
+);
+
+__kernel_entry W32KAPI
+BOOL
+NTAPI
+NtUserIsInterceptWindow(
+    _In_ HWND topLevelWindow,
+    _Out_ BOOL* isIntercept
+);
+#endif // NTDDI_VERSION >= NTDDI_WIN11_GE
+
+//
+// AutoRotation
 //
 
 __kernel_entry W32KAPI
 BOOL
 NTAPI
-NtUserLogicalToPhysicalPoint(
-    _In_ HWND WindowHandle,
-    _In_ LPPOINT lpPoint
+NtUserGetAutoRotationState(
+    _Out_ PAR_STATE pState
+);
+
+//
+// Clipboard
+//
+
+__kernel_entry W32KAPI
+BOOL
+NTAPI
+NtUserGetClipboardMetadata(
+    _In_ UINT format,
+    _Inout_ PGETCLIPBMETADATA metadata);
+
+//
+// Dpi
+//
+
+#if (NTDDI_VERSION >= NTDDI_WIN10_RS4)
+__kernel_entry W32KAPI
+UINT
+NTAPI
+NtUserGetSystemDpiForProcess(
+    VOID
 );
 
 __kernel_entry W32KAPI
 BOOL
 NTAPI
-NtUserPhysicalToLogicalPoint(
-    _In_ HWND WindowHandle,
-    _In_ LPPOINT lpPoint
+NtUserInheritWindowMonitor(
+    _In_ HWND hwnd,
+    _In_opt_ HWND hwndInherit
 );
+#endif // NTDDI_VERSION >= NTDDI_WIN10_RS4
+
+//
+// Feedback
+//
+
+__kernel_entry W32KAPI
+BOOL
+NTAPI
+NtUserGetWindowFeedbackSetting(
+    _In_ HWND hwnd,
+    _In_ FEEDBACK_TYPE feedback,
+    _In_ DWORD dwFlags,
+    _Inout_ UINT32* pSize,
+    _Out_writes_bytes_opt_(*pSize) VOID* config
+);
+
+__kernel_entry W32KAPI
+BOOL
+NTAPI
+NtUserSetWindowFeedbackSetting(
+    _In_ HWND hwnd,
+    _In_ FEEDBACK_TYPE feedback,
+    _In_ DWORD dwFlags,
+    _In_ UINT32 size,
+    _In_reads_bytes_opt_(size) CONST VOID* configuration
+);
+
+//
+// Ink Feedback APIs
+//
+
+#if (NTDDI_VERSION >= NTDDI_WIN11_NI)
+__kernel_entry W32KAPI
+BOOL
+NTAPI
+NtUserSetAdditionalForegroundBoostProcesses(
+    _In_ HWND topLevelWindow,
+    _In_ DWORD processHandleCount,
+    _In_reads_(processHandleCount) HANDLE* processHandleArray
+);
+
+__kernel_entry W32KAPI
+BOOL
+NTAPI
+NtUserRegisterForTooltipDismissNotification(
+    _In_ HWND hWnd,
+    _In_ TOOLTIP_DISMISS_FLAGS tdFlags
+);
+#endif // NTDDI_VERSION >= NTDDI_WIN11_NI
+
+//
+// Accessibility support
+//
+
+__kernel_entry W32KAPI
+BOOL
+NTAPI
+NtUserSoundSentry(
+    VOID
+);
+
+//
+// Misc
+//
 
 __kernel_entry W32KAPI
 ULONG_PTR
@@ -1908,6 +2352,16 @@ NtUserRaiseLowerShellWindow(
     _In_ HWND WindowHandle,
     _In_ BOOLEAN SetWithOptions
 );
+
+#if (NTDDI_VERSION >= NTDDI_WIN11_GE)
+__kernel_entry W32KAPI
+BOOL
+NTAPI
+NtUserApplyWindowAction(
+    _In_ HWND WindowHandle,
+    _In_ WINDOW_ACTION* Action
+);
+#endif // NTDDI_VERSION >= NTDDI_WIN11_GE
 
 //
 // KernelCallbackTable

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * PROJECT:   Veil
  * FILE:      Veil.System.SxS.h
  * PURPOSE:   This file is part of Veil.
@@ -32,7 +32,7 @@ VEIL_BEGIN()
 
 #define ACTIVATION_CONTEXT_FLAG_NO_INHERIT      0x00000001
 
-#if defined(_KERNEL_MODE)
+#ifdef _KERNEL_MODE
 typedef enum _ACTCTX_REQUESTED_RUN_LEVEL
 {
     ACTCTX_RUN_LEVEL_UNSPECIFIED = 0,

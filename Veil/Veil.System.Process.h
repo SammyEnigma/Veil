@@ -1,4 +1,4 @@
-/*
+﻿/*
  * PROJECT:   Veil
  * FILE:      Veil.System.Process.h
  * PURPOSE:   This file is part of Veil.
@@ -2226,7 +2226,7 @@ typedef struct _WOW64_PROCESS
     PVOID Wow64;
 } WOW64_PROCESS, * PWOW64_PROCESS;
 
-#if !defined(_KERNEL_MODE)
+#ifndef _KERNEL_MODE
 // The Wow64Info structure follows the PEB32/TEB32 structures and is shared between 32-bit and 64-bit modules inside a Wow64 process.
 // from SDK/10.0.10240.0/um/minwin/wow64t.h (dmex)
 //
@@ -2385,7 +2385,7 @@ Wow64CurrentNativeTeb(
 #define Wow64SetNativeTebField(teb, field, value) { if ((ULONG)(teb) == ((PTEB32)(teb))->NtTib.Self) {(((PTEB32)(teb))->##field) = (value);} else {(((PTEB)(teb))->##field) = (value);} }
 #endif // _M_X64
 
-#endif // !defined(_KERNEL_MODE)
+#endif // !_KERNEL_MODE
 
 #if defined(_KERNEL_MODE) && !defined(_WINDOWS_)
 
@@ -3977,7 +3977,7 @@ typedef struct _PROCESS_FREE_FIBER_SHADOW_STACK_ALLOCATION_INFORMATION
     PVOID Ssp;
 } PROCESS_FREE_FIBER_SHADOW_STACK_ALLOCATION_INFORMATION, * PPROCESS_FREE_FIBER_SHADOW_STACK_ALLOCATION_INFORMATION;
 
-#if !defined(_KERNEL_MODE)
+#ifndef _KERNEL_MODE
 //
 // Process Syscall Provider Information
 //  NtSetInformationProcess using ProcessSyscallProviderInformation
@@ -3989,7 +3989,7 @@ typedef struct _PROCESS_SYSCALL_PROVIDER_INFORMATION
     GUID  ProviderId; // The unique identifier of the system call provider.
     UCHAR Level;      // The level or mode of the provider.
 } PROCESS_SYSCALL_PROVIDER_INFORMATION, * PPROCESS_SYSCALL_PROVIDER_INFORMATION;
-#endif // !defined(_KERNEL_MODE)
+#endif // !_KERNEL_MODE
 
 /**
  * Contains dynamic enforced address ranges used by various features related to user-mode Hardware-enforced Stack Protection (HSP).

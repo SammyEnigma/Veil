@@ -1,4 +1,4 @@
-/*
+﻿/*
  * PROJECT:   Veil
  * FILE:      Veil.System.Device.Xusb.h
  * PURPOSE:   This file is part of Veil.
@@ -28,7 +28,7 @@ VEIL_BEGIN()
 
 #include <usbspec.h>
 
-#if !defined(_KERNEL_MODE)
+#ifndef _KERNEL_MODE
 
 #include <xinput.h>
 
@@ -130,7 +130,7 @@ DWORD WINAPI XInputGetCapabilitiesEx(
     _Out_ PXINPUT_CAPABILITIES_EX Capabilities  // Receives the capabilities
 ) WIN_NOEXCEPT;
 
-#endif // !defined(_KERNEL_MODE)
+#endif // !_KERNEL_MODE
 
 //
 // xusb22.sys!IOCTLs

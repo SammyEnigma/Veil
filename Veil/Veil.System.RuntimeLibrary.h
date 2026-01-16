@@ -5748,7 +5748,7 @@ RtlRemoveVectoredContinueHandler(
 // Scope table structure definition.
 //
 
-#if defined(_KERNEL_MODE)
+#ifdef _KERNEL_MODE
 typedef struct _SCOPE_TABLE_ARM
 {
     DWORD Count;
@@ -7468,7 +7468,7 @@ RtlGetLengthWithoutTrailingPathSeperators(
     _Out_ PULONG Length
 );
 
-#if !defined(_KERNEL_MODE)
+#ifndef _KERNEL_MODE
 typedef struct _GENERATE_NAME_CONTEXT
 {
     USHORT Checksum;
@@ -7583,7 +7583,7 @@ RtlWow64GetProcessMachines(
 #endif
 
 #if (NTDDI_VERSION >= NTDDI_WIN10_NI)
-#if (defined(_KERNEL_MODE) || (NTDDI_VERSION < NTDDI_WIN10_BR))
+#if (defined(_KERNEL_MODE) || (NTDDI_VERSION < NTDDI_WIN11_BR))
 typedef struct _IMAGE_FILE_MACHINES {
     union {
         DWORD Value;
@@ -7649,7 +7649,7 @@ RtlDllShutdownInProgress(
 // Heaps
 //
 
-#if !defined(_KERNEL_MODE)
+#ifndef _KERNEL_MODE
 
 typedef struct _RTL_HEAP_ENTRY
 {
@@ -8043,7 +8043,7 @@ PVOID
 NTAPI
 RtlProcessHeap(VOID);
 
-#if !defined(_KERNEL_MODE)
+#ifndef _KERNEL_MODE
 inline
 PVOID
 NTAPI
@@ -8057,7 +8057,7 @@ _VEIL_DEFINE_IAT_RAW_SYMBOL(RtlProcessHeap@0, _VEIL_IMPL_RtlProcessHeap);
 #elif defined _M_X64 || defined _M_ARM || defined _M_ARM64
 _VEIL_DEFINE_IAT_SYMBOL(RtlProcessHeap, _VEIL_IMPL_RtlProcessHeap);
 #endif // defined _M_X64 || defined _M_ARM || defined _M_ARM64
-#endif // !defined(_KERNEL_MODE)
+#endif // !_KERNEL_MODE
 
 NTSYSAPI
 BOOLEAN
@@ -8568,7 +8568,7 @@ RtlFlushHeaps(
 // Memory zones
 //
 
-#if !defined(_KERNEL_MODE)
+#ifndef _KERNEL_MODE
 
 // begin_private
 typedef struct _RTL_MEMORY_ZONE_SEGMENT
@@ -12115,8 +12115,6 @@ RtlOpenCurrentUser(
 #define RTL_REGISTRY_HANDLE       0x40000000    // Low order bits are registry handle
 #define RTL_REGISTRY_OPTIONAL     0x80000000    // Indicates the key node is optional
 
-#endif // !_KERNEL_MODE
-
 _IRQL_requires_max_(PASSIVE_LEVEL)
 NTSYSAPI
 NTSTATUS
@@ -12135,8 +12133,6 @@ RtlCheckRegistryKey(
     _In_ ULONG RelativeTo,
     _In_ PCWSTR Path
 );
-
-#ifndef _KERNEL_MODE
 
 typedef
 _Function_class_(RTL_QUERY_REGISTRY_ROUTINE)

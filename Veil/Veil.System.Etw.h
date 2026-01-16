@@ -1,4 +1,4 @@
-/*
+﻿/*
  * PROJECT:   Veil
  * FILE:      Veil.System.Etw.h
  * PURPOSE:   This file is part of Veil.
@@ -28,7 +28,7 @@
 #include <wmistr.h>
 #include <evntrace.h>
 
-#if defined(_KERNEL_MODE)
+#ifdef _KERNEL_MODE
 #ifndef _ETW_KM_
 #define _ETW_KM_
 #endif

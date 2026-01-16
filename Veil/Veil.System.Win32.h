@@ -1,4 +1,4 @@
-/*
+﻿/*
  * PROJECT:   Veil
  * FILE:      Veil.System.Win32.h
  * PURPOSE:   This file is part of Veil.
@@ -283,7 +283,7 @@ NtUserGetAtomName(
 /*
  * Extended Window Styles
  */
-#if defined(_KERNEL_MODE)
+#ifdef _KERNEL_MODE
 
 #define WS_EX_DLGMODALFRAME     0x00000001L
 #define WS_EX_NOPARENTNOTIFY    0x00000004L

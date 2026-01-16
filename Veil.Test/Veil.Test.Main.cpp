@@ -16,4 +16,4 @@ int main(int argc, char* argv[])
     argv;
     return 0;
 }
-#endif // if _KERNEL_MODE
+#endif

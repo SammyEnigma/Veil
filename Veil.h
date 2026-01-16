@@ -279,7 +279,7 @@ struct IUnknown;
 #define DBG _DEBUG
 #endif
 
-#else // if !defined(_KERNEL_MODE)
+#else // _KERNEL_MODE
 
 //
 // Kernel-Mode
@@ -314,7 +314,7 @@ struct IUnknown;
 #include <Unknwn.h>
 #endif
 
-#endif // if defined(_KERNEL_MODE)
+#endif
 
 #include "Veil/Veil.System.Define.h"
 #include "Veil/Veil.System.KernelCore.h"

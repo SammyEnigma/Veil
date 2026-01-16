@@ -7614,7 +7614,7 @@ typedef struct _KUSER_SHARED_DATA {
 
     XSTATE_CONFIGURATION XState;
 
-#if (NTDDI_VERSION < NTDDI_WIN10_BR)
+#if (NTDDI_VERSION < NTDDI_WIN11_BR)
     //
     // RtlQueryFeatureConfigurationChangeStamp
     //
@@ -7646,7 +7646,7 @@ typedef struct _KUSER_SHARED_DATA {
 
 #else
 
-#if (NTDDI_VERSION < NTDDI_WIN10_BR)
+#if (NTDDI_VERSION < NTDDI_WIN11_BR)
     ULONG Reserved10[210];
 #else
     ULONG Reserved10[214];
@@ -7654,7 +7654,7 @@ typedef struct _KUSER_SHARED_DATA {
 
 #endif
 
-#if (NTDDI_VERSION >= NTDDI_WIN10_BR)
+#if (NTDDI_VERSION >= NTDDI_WIN11_BR)
     //
     // RtlQueryFeatureConfigurationChangeStamp
     //
@@ -7789,7 +7789,7 @@ STATIC_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, Reserved10) == 0x728);
 #if !defined(WINDOWS_IGNORE_PACKING_MISMATCH)
 STATIC_ASSERT(sizeof(KUSER_SHARED_DATA) == 0xA70);
 #endif
-#elif (NTDDI_VERSION < NTDDI_WIN10_BR)
+#elif (NTDDI_VERSION < NTDDI_WIN11_BR)
 STATIC_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, FeatureConfigurationChangeStamp) == 0x720);
 STATIC_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, UserPointerAuthMask) == 0x730);
 #if defined(_ARM64_)
@@ -7800,7 +7800,7 @@ STATIC_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, Reserved10) == 0x738);
 #if !defined(WINDOWS_IGNORE_PACKING_MISMATCH)
 STATIC_ASSERT(sizeof(KUSER_SHARED_DATA) == 0xA80);
 #endif
-#else // (NTDDI_VERSION >= NTDDI_WIN10_BR)
+#else // (NTDDI_VERSION >= NTDDI_WIN11_BR)
 #if defined(_ARM64_)
 STATIC_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, XStateArm64) == 0x738);
 #else

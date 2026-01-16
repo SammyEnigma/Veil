@@ -5827,7 +5827,6 @@ RtlRaiseException(
 );
 
 NTSYSAPI
-__analysis_noreturn
 VOID
 NTAPI
 RtlAssert(
@@ -7583,20 +7582,28 @@ RtlWow64GetProcessMachines(
 );
 #endif
 
-#if (NTDDI_VERSION >= NTDDI_WIN11)
-// rev
-#define IMAGE_FILE_NATIVE_MACHINE_I386  0x1
-#define IMAGE_FILE_NATIVE_MACHINE_AMD64 0x2
-#define IMAGE_FILE_NATIVE_MACHINE_ARMNT 0x4
-#define IMAGE_FILE_NATIVE_MACHINE_ARM64 0x8
+#if (NTDDI_VERSION >= NTDDI_WIN10_NI)
+#if (defined(_KERNEL_MODE) || (NTDDI_VERSION < NTDDI_WIN10_BR))
+typedef struct _IMAGE_FILE_MACHINES {
+    union {
+        DWORD Value;
+#if !defined(MIDL_PASS) && !defined(SORTPP_PASS) && !defined(RC_INVOKED)
+        struct {
+            DWORD MachineX86 : 1;
+            DWORD MachineAmd64 : 1;
+            DWORD MachineArm : 1;
+            DWORD MachineArm64 : 1;
+            DWORD MachineArm64EC : 1;
+        } DUMMYSTRUCTNAME;
+#endif
+    } DUMMYUNIONNAME;
+} IMAGE_FILE_MACHINES;
+#endif
 
-// rev
-NTSYSAPI
-NTSTATUS
-NTAPI
+DWORD
 RtlGetImageFileMachines(
     _In_ PCWSTR FileName,
-    _Out_ PUSHORT FileMachines
+    _Out_ IMAGE_FILE_MACHINES* MachineTypeFlags
 );
 #endif
 
@@ -12116,7 +12123,7 @@ NTSTATUS
 NTAPI
 RtlCreateRegistryKey(
     _In_ ULONG RelativeTo,
-    _In_ PWSTR Path
+    _In_ PCWSTR Path
 );
 
 _IRQL_requires_max_(PASSIVE_LEVEL)
@@ -12126,7 +12133,7 @@ NTSTATUS
 NTAPI
 RtlCheckRegistryKey(
     _In_ ULONG RelativeTo,
-    _In_ PWSTR Path
+    _In_ PCWSTR Path
 );
 
 #ifndef _KERNEL_MODE

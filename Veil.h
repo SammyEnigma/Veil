@@ -1,4 +1,4 @@
-/*
+﻿/*
  * PROJECT:   Veil
  * FILE:      Veil.h
  * PURPOSE:   This file is part of Veil.
@@ -197,13 +197,15 @@
 // https://archive.org/search?query=subject%3A%22Windows+11%22
 // https://betawiki.net/wiki/Windows_11
 #define NTDDI_WIN11                         NTDDI_WIN10_CO
-#define NTDDI_WIN11_CO                      NTDDI_WIN10_CO  // Windows 10.0.21277-22000  / Cobalt       / 21H2
-#define NTDDI_WIN11_NI                      NTDDI_WIN10_NI  // Windows 10.0.22449-22631  / Nickel       / 22H2 23H2
-#define NTDDI_WIN11_CU                      NTDDI_WIN10_CU  // Windows 10.0.25057-25236  / Copper
-#define NTDDI_WIN11_ZN                      0x0A00000E      // Windows 10.0.25246-25398  / Zinc
-#define NTDDI_WIN11_GA                      0x0A00000F      // Windows 10.0.25905-25941  / Gallium
-#define NTDDI_WIN11_GE                      0x0A000010      // Windows 10.0.25947-26200  / Germanium    / 24H2 25H2
-//#define NTDDI_WIN11_SE                      0x0A000011      // Windows 10.0.27788-?      / Selenium     / 
+#define NTDDI_WIN11_CO                      NTDDI_WIN10_CO  // Windows 10.0.22000       / Cobalt       / 21H2
+#define NTDDI_WIN11_NI                      NTDDI_WIN10_NI  // Windows 10.0.22621-22631 / Nickel       / 22H2-23H2
+#define NTDDI_WIN11_CU                      NTDDI_WIN10_CU  // Windows 10.0.25057-25236 / Copper
+#define NTDDI_WIN11_ZN                      0x0A00000E      // Windows 10.0.25246-25398 / Zinc
+#define NTDDI_WIN11_GA                      0x0A00000F      // Windows 10.0.25905-25941 / Gallium
+#define NTDDI_WIN11_GE                      0x0A000010      // Windows 10.0.26100       / Germanium    / 24H2
+#define NTDDI_WIN11_DT                      0x0A000011      // Windows 10.0.26200       / Dilithium    / 25H1-25H2
+#define NTDDI_WIN11_BR                      0x0A000012      // Windows 10.0.28000       / Bromine      / 26H1
+#define NTDDI_WIN11_KR                      0x0A000013      // Windows 10.0.?-?         / Krypton      / 26H2
 
 // Fix WDK
 #define NTDDI_THRESHOLD                     NTDDI_WINTHRESHOLD

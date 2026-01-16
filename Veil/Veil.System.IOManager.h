@@ -1,4 +1,4 @@
-/*
+﻿/*
  * PROJECT:   Veil
  * FILE:      Veil.System.IOManager.h
  * PURPOSE:   This file is part of Veil.
@@ -3377,13 +3377,13 @@ ZwRemoveIoCompletion(
     _In_opt_ PLARGE_INTEGER Timeout
 );
 
-// private
-typedef struct _FILE_IO_COMPLETION_INFORMATION
-{
-    PVOID KeyContext;
-    PVOID ApcContext;
-    IO_STATUS_BLOCK IoStatusBlock;
+#if (!defined(_KERNEL_MODE) || NTDDI_VERSION < NTDDI_WIN11_BR)
+typedef struct _FILE_IO_COMPLETION_INFORMATION {
+    PVOID               KeyContext;
+    PVOID               ApcContext;
+    IO_STATUS_BLOCK     IoStatusBlock;
 } FILE_IO_COMPLETION_INFORMATION, * PFILE_IO_COMPLETION_INFORMATION;
+#endif
 
 __kernel_entry NTSYSCALLAPI
 NTSTATUS

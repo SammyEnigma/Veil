@@ -1,4 +1,4 @@
-/*
+﻿/*
  * PROJECT:   Veil
  * FILE:      Veil.System.Executive.h
  * PURPOSE:   This file is part of Veil.
@@ -7070,7 +7070,6 @@ typedef enum _ALTERNATIVE_ARCHITECTURE_TYPE
 #define SHARED_GLOBAL_FLAGS_QPC_BYPASS_A73_ERRATA (0x40)
 #define SHARED_GLOBAL_FLAGS_QPC_BYPASS_USE_RDTSCP (0x80)
 
-//#include <pshpack4.h>
 //@[comment("MVI_tracked")]
 /**
  * The KUSER_SHARED_DATA structure contains information shared with user-mode.
@@ -7615,6 +7614,7 @@ typedef struct _KUSER_SHARED_DATA {
 
     XSTATE_CONFIGURATION XState;
 
+#if (NTDDI_VERSION < NTDDI_WIN10_BR)
     //
     // RtlQueryFeatureConfigurationChangeStamp
     //
@@ -7626,6 +7626,7 @@ typedef struct _KUSER_SHARED_DATA {
     //
 
     ULONG Spare;
+#endif
 
     //
     // This field holds a mask that is used in the process of authenticating pointers in user mode.
@@ -7645,12 +7646,29 @@ typedef struct _KUSER_SHARED_DATA {
 
 #else
 
+#if (NTDDI_VERSION < NTDDI_WIN10_BR)
     ULONG Reserved10[210];
+#else
+    ULONG Reserved10[214];
+#endif
 
 #endif
 
+#if (NTDDI_VERSION >= NTDDI_WIN10_BR)
+    //
+    // RtlQueryFeatureConfigurationChangeStamp
+    //
+
+    KSYSTEM_TIME FeatureConfigurationChangeStamp;
+
+    //
+    // Spare (available for re-use).
+    //
+
+    ULONG Spare;
+#endif
+
 } KUSER_SHARED_DATA, * PKUSER_SHARED_DATA;
-//#include <poppack.h>
 
 //
 // Mostly enforce earlier comment about the stability and
@@ -7769,9 +7787,9 @@ STATIC_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, XStateArm64) == 0x728);
 STATIC_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, Reserved10) == 0x728);
 #endif
 #if !defined(WINDOWS_IGNORE_PACKING_MISMATCH)
-STATIC_ASSERT(sizeof(KUSER_SHARED_DATA) == 0xa70);
+STATIC_ASSERT(sizeof(KUSER_SHARED_DATA) == 0xA70);
 #endif
-#else
+#elif (NTDDI_VERSION < NTDDI_WIN10_BR)
 STATIC_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, FeatureConfigurationChangeStamp) == 0x720);
 STATIC_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, UserPointerAuthMask) == 0x730);
 #if defined(_ARM64_)
@@ -7781,6 +7799,16 @@ STATIC_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, Reserved10) == 0x738);
 #endif
 #if !defined(WINDOWS_IGNORE_PACKING_MISMATCH)
 STATIC_ASSERT(sizeof(KUSER_SHARED_DATA) == 0xA80);
+#endif
+#else // (NTDDI_VERSION >= NTDDI_WIN10_BR)
+#if defined(_ARM64_)
+STATIC_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, XStateArm64) == 0x738);
+#else
+STATIC_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, Reserved10) == 0x738);
+#endif
+STATIC_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, FeatureConfigurationChangeStamp) == 0xA90);
+#if !defined(WINDOWS_IGNORE_PACKING_MISMATCH)
+STATIC_ASSERT(sizeof(KUSER_SHARED_DATA) == 0xAA0);
 #endif
 #endif
 

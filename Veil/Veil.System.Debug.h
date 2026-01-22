@@ -1,4 +1,4 @@
-/*
+﻿/*
  * PROJECT:   Veil
  * FILE:      Veil.System.Debug.h
  * PURPOSE:   This file is part of Veil.
@@ -138,51 +138,58 @@ DbgPrompt(
 // System Debug
 //
 
-// private
+/**
+ * The SYSDBG_COMMAND enumeration specifies the type of system debugger
+ * operation requested through NtSystemDebugControl.
+ */
 typedef enum _SYSDBG_COMMAND
 {
-    SysDbgQueryModuleInformation,
-    SysDbgQueryTraceInformation,
-    SysDbgSetTracepoint,
-    SysDbgSetSpecialCall, // PVOID
-    SysDbgClearSpecialCalls, // void
-    SysDbgQuerySpecialCalls,
-    SysDbgBreakPoint,
-    SysDbgQueryVersion, // DBGKD_GET_VERSION64
-    SysDbgReadVirtual, // SYSDBG_VIRTUAL
-    SysDbgWriteVirtual, // SYSDBG_VIRTUAL
-    SysDbgReadPhysical, // SYSDBG_PHYSICAL // 10
-    SysDbgWritePhysical, // SYSDBG_PHYSICAL
-    SysDbgReadControlSpace, // SYSDBG_CONTROL_SPACE
-    SysDbgWriteControlSpace, // SYSDBG_CONTROL_SPACE
-    SysDbgReadIoSpace, // SYSDBG_IO_SPACE
-    SysDbgWriteIoSpace, // SYSDBG_IO_SPACE
-    SysDbgReadMsr, // SYSDBG_MSR
-    SysDbgWriteMsr, // SYSDBG_MSR
-    SysDbgReadBusData, // SYSDBG_BUS_DATA
-    SysDbgWriteBusData, // SYSDBG_BUS_DATA
-    SysDbgCheckLowMemory, // 20
-    SysDbgEnableKernelDebugger,
-    SysDbgDisableKernelDebugger,
-    SysDbgGetAutoKdEnable,
-    SysDbgSetAutoKdEnable,
-    SysDbgGetPrintBufferSize,
-    SysDbgSetPrintBufferSize,
-    SysDbgGetKdUmExceptionEnable,
-    SysDbgSetKdUmExceptionEnable,
-    SysDbgGetTriageDump, // SYSDBG_TRIAGE_DUMP
-    SysDbgGetKdBlockEnable, // 30
-    SysDbgSetKdBlockEnable,
-    SysDbgRegisterForUmBreakInfo,
-    SysDbgGetUmBreakPid,
-    SysDbgClearUmBreakPid,
-    SysDbgGetUmAttachPid,
-    SysDbgClearUmAttachPid,
-    SysDbgGetLiveKernelDump, // SYSDBG_LIVEDUMP_CONTROL
-    SysDbgKdPullRemoteFile, // SYSDBG_KD_PULL_REMOTE_FILE
+    SysDbgQueryModuleInformation,       // q: DBGKD_DEBUG_DATA_HEADER64
+    SysDbgQueryTraceInformation,        // q: DBGKD_TRACE_DATA
+    SysDbgSetTracepoint,                // s: PVOID
+    SysDbgSetSpecialCall,               // s: PVOID
+    SysDbgClearSpecialCalls,            // s: void
+    SysDbgQuerySpecialCalls,            // q: PVOID[]
+    SysDbgBreakPoint,                   // s: void
+    SysDbgQueryVersion,                 // q: DBGKD_GET_VERSION64
+    SysDbgReadVirtual,                  // q: SYSDBG_VIRTUAL
+    SysDbgWriteVirtual,                 // s: SYSDBG_VIRTUAL
+    SysDbgReadPhysical,                 // q: SYSDBG_PHYSICAL // 10
+    SysDbgWritePhysical,                // s: SYSDBG_PHYSICAL
+    SysDbgReadControlSpace,             // q: SYSDBG_CONTROL_SPACE
+    SysDbgWriteControlSpace,            // s: SYSDBG_CONTROL_SPACE
+    SysDbgReadIoSpace,                  // q: SYSDBG_IO_SPACE
+    SysDbgWriteIoSpace,                 // s: SYSDBG_IO_SPACE
+    SysDbgReadMsr,                      // q: SYSDBG_MSR
+    SysDbgWriteMsr,                     // s: SYSDBG_MSR
+    SysDbgReadBusData,                  // q: SYSDBG_BUS_DATA
+    SysDbgWriteBusData,                 // s: SYSDBG_BUS_DATA
+    SysDbgCheckLowMemory,               // q: ULONG // 20
+    SysDbgEnableKernelDebugger,         // s: void
+    SysDbgDisableKernelDebugger,        // s: void
+    SysDbgGetAutoKdEnable,              // q: ULONG
+    SysDbgSetAutoKdEnable,              // s: ULONG
+    SysDbgGetPrintBufferSize,           // q: ULONG
+    SysDbgSetPrintBufferSize,           // s: ULONG
+    SysDbgGetKdUmExceptionEnable,       // q: ULONG
+    SysDbgSetKdUmExceptionEnable,       // s: ULONG
+    SysDbgGetTriageDump,                // q: SYSDBG_TRIAGE_DUMP
+    SysDbgGetKdBlockEnable,             // q: ULONG // 30
+    SysDbgSetKdBlockEnable,             // s: ULONG
+    SysDbgRegisterForUmBreakInfo,       // s: HANDLE
+    SysDbgGetUmBreakPid,                // q: ULONG
+    SysDbgClearUmBreakPid,              // s: void
+    SysDbgGetUmAttachPid,               // q: ULONG
+    SysDbgClearUmAttachPid,             // s: void
+    SysDbgGetLiveKernelDump,            // q: SYSDBG_LIVEDUMP_CONTROL
+    SysDbgKdPullRemoteFile,             // q: SYSDBG_KD_PULL_REMOTE_FILE
     SysDbgMaxInfoClass
 } SYSDBG_COMMAND, * PSYSDBG_COMMAND;
 
+/**
+ * The SYSDBG_VIRTUAL structure describes a request to read or write virtual
+ * memory through the system debugger interface.
+ */
 typedef struct _SYSDBG_VIRTUAL
 {
     PVOID Address;
@@ -190,6 +197,10 @@ typedef struct _SYSDBG_VIRTUAL
     ULONG Request;
 } SYSDBG_VIRTUAL, * PSYSDBG_VIRTUAL;
 
+/**
+ * The SYSDBG_PHYSICAL structure describes a request to read or write physical
+ * memory through the system debugger interface.
+ */
 typedef struct _SYSDBG_PHYSICAL
 {
     PHYSICAL_ADDRESS Address;
@@ -197,6 +208,10 @@ typedef struct _SYSDBG_PHYSICAL
     ULONG Request;
 } SYSDBG_PHYSICAL, * PSYSDBG_PHYSICAL;
 
+/**
+ * The SYSDBG_CONTROL_SPACE structure describes a request to access processor
+ * control space through the system debugger interface.
+ */
 typedef struct _SYSDBG_CONTROL_SPACE
 {
     ULONG64 Address;
@@ -207,6 +222,10 @@ typedef struct _SYSDBG_CONTROL_SPACE
 
 typedef enum _INTERFACE_TYPE INTERFACE_TYPE;
 
+/**
+ * The SYSDBG_IO_SPACE structure describes a request to access I/O space
+ * through the system debugger interface.
+ */
 typedef struct _SYSDBG_IO_SPACE
 {
     ULONG64 Address;
@@ -217,6 +236,10 @@ typedef struct _SYSDBG_IO_SPACE
     ULONG AddressSpace;
 } SYSDBG_IO_SPACE, * PSYSDBG_IO_SPACE;
 
+/**
+ * The SYSDBG_MSR structure describes a request to read or write a model-specific
+ * register (MSR) through the system debugger interface.
+ */
 typedef struct _SYSDBG_MSR
 {
     ULONG Msr;
@@ -225,6 +248,10 @@ typedef struct _SYSDBG_MSR
 
 typedef enum _BUS_DATA_TYPE BUS_DATA_TYPE;
 
+/**
+ * The SYSDBG_BUS_DATA structure describes a request to access bus-specific
+ * configuration data through the system debugger interface.
+ */
 typedef struct _SYSDBG_BUS_DATA
 {
     ULONG Address;
@@ -235,7 +262,10 @@ typedef struct _SYSDBG_BUS_DATA
     ULONG SlotNumber;
 } SYSDBG_BUS_DATA, * PSYSDBG_BUS_DATA;
 
-// private
+/**
+ * The SYSDBG_TRIAGE_DUMP structure describes parameters used when generating
+ * a triage dump through the system debugger interface.
+ */
 typedef struct _SYSDBG_TRIAGE_DUMP
 {
     ULONG Flags;
@@ -249,7 +279,10 @@ typedef struct _SYSDBG_TRIAGE_DUMP
     PHANDLE Handles;
 } SYSDBG_TRIAGE_DUMP, * PSYSDBG_TRIAGE_DUMP;
 
-// private
+/**
+ * The SYSDBG_LIVEDUMP_CONTROL_FLAGS union specifies control flags used when
+ * generating a live kernel dump.
+ */
 typedef union _SYSDBG_LIVEDUMP_CONTROL_FLAGS
 {
     struct
@@ -264,7 +297,10 @@ typedef union _SYSDBG_LIVEDUMP_CONTROL_FLAGS
     ULONG AsUlong;
 } SYSDBG_LIVEDUMP_CONTROL_FLAGS, * PSYSDBG_LIVEDUMP_CONTROL_FLAGS;
 
-// private
+/**
+ * The SYSDBG_LIVEDUMP_CONTROL_ADDPAGES union specifies additional page
+ * categories to include when generating a live kernel dump.
+ */
 typedef union _SYSDBG_LIVEDUMP_CONTROL_ADDPAGES
 {
     struct
@@ -278,7 +314,10 @@ typedef union _SYSDBG_LIVEDUMP_CONTROL_ADDPAGES
 
 #define SYSDBG_LIVEDUMP_SELECTIVE_CONTROL_VERSION 1
 
-// rev
+/**
+ * The SYSDBG_LIVEDUMP_SELECTIVE_CONTROL structure specifies selective dump
+ * options for live kernel dump generation.
+ */
 typedef struct _SYSDBG_LIVEDUMP_SELECTIVE_CONTROL
 {
     ULONG Version;
@@ -299,7 +338,10 @@ typedef struct _SYSDBG_LIVEDUMP_SELECTIVE_CONTROL
 #define SYSDBG_LIVEDUMP_CONTROL_VERSION_2 2
 #define SYSDBG_LIVEDUMP_CONTROL_VERSION SYSDBG_LIVEDUMP_CONTROL_VERSION_2
 
-// private
+/**
+ * The SYSDBG_LIVEDUMP_CONTROL_V1 structure describes parameters used when
+ * generating a live kernel dump (version 1).
+ */
 typedef struct _SYSDBG_LIVEDUMP_CONTROL_V1
 {
     ULONG Version;
@@ -314,7 +356,10 @@ typedef struct _SYSDBG_LIVEDUMP_CONTROL_V1
     SYSDBG_LIVEDUMP_CONTROL_ADDPAGES AddPagesControl;
 } SYSDBG_LIVEDUMP_CONTROL_V1, * PSYSDBG_LIVEDUMP_CONTROL_V1;
 
-// private
+/**
+ * The SYSDBG_LIVEDUMP_CONTROL structure describes parameters used when
+ * generating a live kernel dump (current version).
+ */
 typedef struct _SYSDBG_LIVEDUMP_CONTROL
 {
     ULONG Version;
@@ -330,12 +375,26 @@ typedef struct _SYSDBG_LIVEDUMP_CONTROL
     PSYSDBG_LIVEDUMP_SELECTIVE_CONTROL SelectiveControl; // since WIN11
 } SYSDBG_LIVEDUMP_CONTROL, * PSYSDBG_LIVEDUMP_CONTROL;
 
-// private
+/**
+ * The SYSDBG_KD_PULL_REMOTE_FILE structure describes a request to retrieve
+ * a remote file through the kernel debugger transport.
+ */
 typedef struct _SYSDBG_KD_PULL_REMOTE_FILE
 {
     UNICODE_STRING ImageFileName;
 } SYSDBG_KD_PULL_REMOTE_FILE, * PSYSDBG_KD_PULL_REMOTE_FILE;
 
+/**
+ * The NtSystemDebugControl routine provides system debugging and diagnostic control of the system.
+ *
+ * \param[in] Command The debug control command to execute (of type SYSDBG_COMMAND).
+ * \param[in] InputBuffer Optional pointer to a buffer containing input data for the command.
+ * \param[in] InputBufferLength Length, in bytes, of the input buffer.
+ * \param[out] OutputBuffer Optional pointer to a buffer that receives output data from the command.
+ * \param[in] OutputBufferLength Length, in bytes, of the output buffer.
+ * \param[out] ReturnLength Optional pointer to a variable that receives the number of bytes returned in the output buffer.
+ * \return NTSTATUS Successful or errant status.
+ */
 __kernel_entry NTSYSCALLAPI
 NTSTATUS
 NTAPI
@@ -365,6 +424,10 @@ ZwSystemDebugControl(
 // Hard errors
 //
 
+/**
+ * The HARDERROR_RESPONSE_OPTION enumeration specifies the type of user
+ * interface prompt that may be displayed when a hard error occurs.
+ */
 typedef enum _HARDERROR_RESPONSE_OPTION
 {
     OptionAbortRetryIgnore,
@@ -378,6 +441,10 @@ typedef enum _HARDERROR_RESPONSE_OPTION
     OptionCancelTryContinue
 } HARDERROR_RESPONSE_OPTION;
 
+/**
+ * The HARDERROR_RESPONSE enumeration specifies the response returned by the
+ * caller or user when handling a hard error condition.
+ */
 typedef enum _HARDERROR_RESPONSE
 {
     ResponseReturnToCaller,
@@ -393,8 +460,23 @@ typedef enum _HARDERROR_RESPONSE
     ResponseContinue
 } HARDERROR_RESPONSE;
 
+/**
+ * HARDERROR_OVERRIDE_ERRORMODE indicates that the system should ignore the
+ * calling process's error mode when processing a hard error.
+ */
 #define HARDERROR_OVERRIDE_ERRORMODE 0x10000000
 
+/**
+ * The NtRaiseHardError routine raises a hard error or serious error dialog box being displayed to the user.
+ *
+ * \param[in] ErrorStatus The NTSTATUS code that describes the error condition.
+ * \param[in] NumberOfParameters The number of parameters in the Parameters array.
+ * \param[in] UnicodeStringParameterMask A bitmask indicating which entries in the Parameters array are Unicode strings.
+ * \param[in] Parameters An array of parameters to be used in the error message.
+ * \param[in] ValidResponseOptions Specifies the valid responses that the user can select in the error dialog.
+ * \param[out] Response Receives the user's response to the error dialog.
+ * \return NTSTATUS Successful or errant status.
+ */
 __kernel_entry NTSYSCALLAPI
 NTSTATUS
 NTAPI

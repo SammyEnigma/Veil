@@ -1,4 +1,4 @@
-/*
+﻿/*
  * PROJECT:   Veil
  * FILE:      Veil.System.WinNT.h
  * PURPOSE:   This file is part of Veil.
@@ -24,7 +24,6 @@
 #endif
 
 VEIL_BEGIN()
-
 
 //
 // Critical Section

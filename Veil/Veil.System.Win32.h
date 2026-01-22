@@ -246,12 +246,21 @@ NtUserGetClassInfoEx(
     _In_ BOOL Ansi
 );
 
+/**
+ * The NtUserGetClassName routine retrieves a string that specifies the window type.
+ *
+ * \param WindowHandle A handle to the window and, indirectly, the class to which the window belongs.
+ * \param RealClassName Return the superclass or baseclass name when the window is a superclass.
+ * \param ClassName A pointer to a string that receives the window type.
+ * \return If the function succeeds, the return value is the number of characters copied to the specified buffer.
+ * \sa https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-realgetwindowclassw
+ */
 __kernel_entry W32KAPI
-INT
+UINT
 NTAPI
 NtUserGetClassName(
-    _In_ HWND Window,
-    _In_ BOOL Real,
+    _In_ HWND WindowHandle,
+    _In_ BOOL RealClassName,
     _Inout_ PUNICODE_STRING ClassName
 );
 
@@ -459,6 +468,12 @@ NtUserSetForegroundWindowForApplication(
     _In_  HWND hWnd
 );
 
+/**
+ * The NtUserGetForegroundWindow routine retrieves a handle to the foreground window.
+ *
+ * \return A handle to the foreground window, or NULL if no foreground window exists.
+ * \sa https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getforegroundwindow
+ */
 __kernel_entry W32KAPI
 HWND
 NTAPI
@@ -562,7 +577,7 @@ NtUserFlashWindowEx(
 #ifndef _KERNEL_MODE
 // User32 ordinal 2005
 __kernel_entry W32KAPI
-LOGICAL
+BOOL
 NTAPI
 SetChildWindowNoActivate(
     _In_ HWND WindowHandle
@@ -570,7 +585,7 @@ SetChildWindowNoActivate(
 #endif
 
 __kernel_entry W32KAPI
-LOGICAL
+BOOL
 NTAPI
 NtUserSetChildWindowNoActivate(
     _In_ HWND WindowHandle
@@ -1475,7 +1490,7 @@ __kernel_entry W32KAPI
 BOOL
 NTAPI
 NtUserQuerySendMessage(
-    _Inout_ MSG* pMsg
+    _Inout_ MSG* Message
 );
 
 #ifndef _KERNEL_MODE
@@ -1731,6 +1746,12 @@ NtUserSetProcessWindowStation(
     _In_ HWINSTA hWinSta
 );
 
+/**
+ * The NtUserGetProcessWindowStation routine retrieves the window station handle associated with the current process.
+ *
+ * \return A handle to the window station, or NULL if the operation fails.
+ * \sa https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getprocesswindowstation
+ */
 __kernel_entry W32KAPI
 HWINSTA
 NTAPI
@@ -1739,7 +1760,7 @@ NtUserGetProcessWindowStation(
 );
 
 NTSYSAPI
-LOGICAL
+BOOL
 NTAPI
 SetWindowStationUser(
     _In_ HWINSTA WindowStationHandle,
@@ -1749,7 +1770,7 @@ SetWindowStationUser(
 );
 
 __kernel_entry W32KAPI
-LOGICAL
+BOOL
 NTAPI
 NtUserSetWindowStationUser(
     _In_ HWINSTA WindowStationHandle,
@@ -1799,7 +1820,7 @@ NtUserCloseDesktop(
 );
 
 __kernel_entry W32KAPI
-LOGICAL
+BOOL
 NTAPI
 NtUserSwitchDesktop(
     _In_ HDESK DesktopHandle,
@@ -1824,7 +1845,7 @@ NtUserGetThreadDesktop(
 );
 
 __kernel_entry W32KAPI
-LOGICAL
+BOOL
 NTAPI
 NtUserSetThreadDesktop(
     _In_ HDESK DesktopHandle
@@ -1835,9 +1856,9 @@ NTSTATUS
 NTAPI
 NtUserBuildHwndList(
     _In_opt_ HANDLE DesktopHandle,
-    _In_opt_ HWND StartWindowHandle,
-    _In_opt_ LOGICAL IncludeChildren,
-    _In_opt_ LOGICAL ExcludeImmersive,
+    _In_opt_ HWND ParentWindowHandle,
+    _In_opt_ BOOL IncludeChildren,
+    _In_opt_ BOOL ExcludeImmersive,
     _In_opt_ ULONG ThreadId,
     _In_ ULONG HwndListInformationLength,
     _Out_writes_bytes_(HwndListInformationLength) PVOID HwndListInformation,
@@ -1986,7 +2007,7 @@ NtUserGetCursorInfo(
 );
 
 __kernel_entry W32KAPI
-LOGICAL
+BOOL
 NTAPI
 NtUserGetIconInfo(
     _In_ HICON IconOrCursorHandle,
@@ -1994,15 +2015,15 @@ NtUserGetIconInfo(
     _Inout_opt_ PUNICODE_STRING Name,
     _Inout_opt_ PUNICODE_STRING ResourceId,
     _Out_opt_ PULONG ColorBits,
-    _In_ LOGICAL IsCursorHandle
+    _In_ BOOL IsCursorHandle
 );
 
 __kernel_entry W32KAPI
-LOGICAL
+BOOL
 NTAPI
 NtUserGetIconSize(
     _In_ HGDIOBJ IconOrCursorHandle,
-    _In_ LOGICAL IsCursorHandle,
+    _In_ BOOL IsCursorHandle,
     _Out_ PULONG XX,
     _Out_ PULONG YY
 );
@@ -2075,8 +2096,7 @@ NTAPI
 NtUserQueryInformationThread(
     _In_ HANDLE ThreadHandle,
     _In_ USERTHREADINFOCLASS ThreadInformationClass,
-    _Out_writes_bytes_(ThreadInformationLength) PVOID ThreadInformation,
-    _In_ ULONG ThreadInformationLength,
+    _Out_writes_bytes_(*ReturnLength) PVOID ThreadInformation,
     _Out_opt_ PULONG ReturnLength
 );
 
@@ -2116,6 +2136,13 @@ NtUserUnregisterHotKey(
 // Debug
 //
 
+/**
+ * The NtUserSetProcessRestrictionExemption routine marks the current process as exempt from certain win32k/user restrictions.
+ * Note: This requires a developer mode/license check.
+ *
+ * \param Enable Indicates whether to enable or disable the exemption.
+ * \return Successful or errant status.
+ */
 __kernel_entry W32KAPI
 BOOL
 NTAPI
@@ -2135,11 +2162,14 @@ NtUserShellForegroundBoostProcess(
     _In_ HWND WindowHandle
 );
 
+// rev
 __kernel_entry W32KAPI
 ULONG
 NTAPI
 NtUserSetAdditionalPowerThrottlingProcess(
-    _In_ HWND WindowHandle
+    _In_ HWND WindowHandle,
+    _In_ ULONG ProcessHandlesCount,
+    _In_reads_(ProcessHandlesCount) PHANDLE ProcessHandles
 );
 
 //
@@ -2197,7 +2227,7 @@ NtUserHungWindowFromGhostWindow(
 );
 
 __kernel_entry W32KAPI
-LOGICAL
+BOOL
 NTAPI
 NtUserDisableProcessWindowsGhosting(
     VOID
@@ -2328,6 +2358,39 @@ NtUserSoundSentry(
 );
 
 //
+// UI Context
+//
+
+typedef enum _PROCESS_UICONTEXT
+{
+    PROCESS_UICONTEXT_DESKTOP,
+    PROCESS_UICONTEXT_IMMERSIVE,
+    PROCESS_UICONTEXT_IMMERSIVE_BROKER,
+    PROCESS_UICONTEXT_IMMERSIVE_BROWSER
+} PROCESS_UICONTEXT;
+
+typedef enum _PROCESS_UI_FLAGS
+{
+    PROCESS_UIF_NONE,
+    PROCESS_UIF_AUTHORING_MODE,
+    PROCESS_UIF_RESTRICTIONS_DISABLED
+} PROCESS_UI_FLAGS;
+
+typedef struct _PROCESS_UICONTEXT_INFORMATION
+{
+    PROCESS_UICONTEXT ProcessUIContext;
+    PROCESS_UI_FLAGS Flags;
+} PROCESS_UICONTEXT_INFORMATION, * PPROCESS_UICONTEXT_INFORMATION;
+
+__kernel_entry W32KAPI
+NTSTATUS
+NTAPI
+NtUserGetProcessUIContextInformation(
+    _In_ HANDLE ProcessHandle,
+    _Out_ PPROCESS_UICONTEXT_INFORMATION UIContext
+);
+
+//
 // Misc
 //
 
@@ -2339,7 +2402,7 @@ NtUserGetThreadState(
 );
 
 __kernel_entry W32KAPI
-LOGICAL
+BOOL
 NTAPI
 NtUserCanCurrentThreadChangeForeground(
     VOID
@@ -2363,11 +2426,145 @@ NtUserApplyWindowAction(
 );
 #endif // NTDDI_VERSION >= NTDDI_WIN11_GE
 
+/**
+ * The NtUserDisableProcessWindowFiltering routine disables window filtering
+ * so you can enumerate immersive windows from the desktop.
+ *
+ * \return Successful or errant status.
+ * \sa https://learn.microsoft.com/en-us/windows/win32/sbscs/application-manifests#disableWindowFiltering
+ */
+__kernel_entry W32KAPI
+BOOL
+NTAPI
+NtUserDisableProcessWindowFiltering(
+    VOID
+);
+
+__kernel_entry W32KAPI
+HANDLE
+NTAPI
+NtUserGetProp(
+    _In_ HWND WindowHandle,
+    _In_ PCWSTR String
+);
+
+__kernel_entry W32KAPI
+HANDLE
+NTAPI
+NtUserGetProp2(
+    _In_ HWND WindowHandle,
+    _In_ PCUNICODE_STRING String
+);
+
+// rev // Valid bit masks enforced by NtUserSetProcessWin32Capabilities
+#define PROC_CAP_FLAGS1_VALID_MASK     0x00000007u    // bits 0-2
+#define PROC_CAP_FLAGS2_VALID_MASK     0x00000007u    // bits 0-2
+#define PROC_CAP_ENABLE_VALID_MASK     0x00000001u    // bit 0
+#define PROC_CAP_DISABLE_VALID_MASK    0x00000001u    // bit 0
+
+#define PROC_CAP_FLAGS1_BIT0           0x00000001u
+#define PROC_CAP_FLAGS1_BIT1           0x00000002u
+#define PROC_CAP_FLAGS1_BIT2           0x00000004u
+
+#define PROC_CAP_FLAGS2_BIT0           0x00000001u
+#define PROC_CAP_FLAGS2_BIT1           0x00000002u
+#define PROC_CAP_FLAGS2_BIT2           0x00000004u
+
+#define PROC_CAP_ENABLE_BIT0           0x00000001u
+#define PROC_CAP_DISABLE_BIT0          0x00000001u
+
+#define PROC_CAP_FLAGS1_INVALID(x)     (((x) & ~PROC_CAP_FLAGS1_VALID_MASK) != 0)
+#define PROC_CAP_FLAGS2_INVALID(x)     (((x) & ~PROC_CAP_FLAGS2_VALID_MASK) != 0)
+#define PROC_CAP_ENABLE_INVALID(x)     (((x) & ~PROC_CAP_ENABLE_VALID_MASK) != 0)
+#define PROC_CAP_DISABLE_INVALID(x)    (((x) & ~PROC_CAP_DISABLE_VALID_MASK) != 0)
+
+// rev
+typedef struct _USER_PROCESS_CAP_ENTRY
+{
+    HANDLE ProcessHandle;
+    ULONG Flags1;
+    ULONG Flags2;
+    ULONG EnableMask;
+    ULONG DisableMask;
+} USER_PROCESS_CAP_ENTRY, * PUSER_PROCESS_CAP_ENTRY;
+
+// rev
+typedef struct _USER_PROCESS_CAP_INTERNAL
+{
+    PVOID ProcessObject;
+    ULONG SessionId;
+    ULONG Reserved;
+    ULONGLONG FlagsPacked;
+    ULONGLONG CapabilityPacked;
+} USER_PROCESS_CAP_INTERNAL, * PUSER_PROCESS_CAP_INTERNAL;
+
+// rev
+__kernel_entry W32KAPI
+NTSTATUS
+NTAPI
+NtUserSetProcessWin32Capabilities(
+    _In_reads_(Count) const USER_PROCESS_CAP_ENTRY* Capabilities,
+    _In_ ULONG Count
+);
+
+// rev
+/**
+ * The NtUserSetProcessUIAccessZorder routine tweaks window z-order behavior for UIAccess scenarios.
+ * Note: Set only when the process is not elevated.
+ *
+ * \return Successful or errant status.
+ */
+__kernel_entry W32KAPI
+NTSTATUS
+NTAPI
+NtUserSetProcessUIAccessZorder(
+    VOID
+);
+
+__kernel_entry W32KAPI
+HANDLE
+NTAPI
+GetWindowProcessHandle(
+    _In_ HWND WindowHandle,
+    _In_ ACCESS_MASK DesiredAccess
+);
+
+__kernel_entry W32KAPI
+HANDLE
+NTAPI
+NtUserGetWindowProcessHandle(
+    _In_ HWND WindowHandle,
+    _In_ ACCESS_MASK DesiredAccess
+);
+
+// Send to the window registered with NtUserRegisterCloakedNotification
+// when cloak state of the window has changed
+// wParam - if window cloak state changed contains cloaking value
+//          which can be one/all of the below
+//          DWM_CLOAKED_APP(0x0000001).The window was cloaked by its owner application.
+//          DWM_CLOAKED_SHELL(0x0000002).The window was cloaked by the Shell.
+//          0 - window is not cloaked
+//
+// lParam - 0 (unused)
+//
+#define WM_CLOAKED_STATE_CHANGED 0x0347
+
+__kernel_entry W32KAPI
+BOOL
+NTAPI
+NtUserRegisterCloakedNotification(
+    _In_ HWND WindowHandle,
+    _In_ BOOL Register
+);
+
 //
 // KernelCallbackTable
 //
 
-typedef NTSTATUS FN_DISPATCH(PVOID);
+typedef _Function_class_(FN_DISPATCH)
+NTSTATUS NTAPI FN_DISPATCH(
+    _In_opt_ PVOID Context
+);
 typedef FN_DISPATCH* PFN_DISPATCH;
 
 // Peb!KernelCallbackTable = user32.dll!apfnDispatch

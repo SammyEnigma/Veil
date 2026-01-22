@@ -1,4 +1,4 @@
-/*
+﻿/*
  * PROJECT:   Veil
  * FILE:      Veil.System.Security.h
  * PURPOSE:   This file is part of Veil.
@@ -130,12 +130,8 @@ VEIL_BEGIN()
 //#define MaxTokenInfoClass                     ((TOKEN_INFORMATION_CLASS)51)
 
 //
-// Authz
-//
-
-// begin_rev
-
 // Types
+//
 
 #define TOKEN_SECURITY_ATTRIBUTE_TYPE_INVALID   0x00
 #define TOKEN_SECURITY_ATTRIBUTE_TYPE_INT64     0x01
@@ -150,7 +146,9 @@ VEIL_BEGIN()
 #define TOKEN_SECURITY_ATTRIBUTE_TYPE_BOOLEAN   0x06
 #define TOKEN_SECURITY_ATTRIBUTE_TYPE_OCTET_STRING 0x10
 
+//
 // Flags
+//
 
 // Fully-qualified binary name.
 #define TOKEN_SECURITY_ATTRIBUTE_NON_INHERITABLE        0x0001
@@ -264,6 +262,11 @@ typedef struct _TOKEN_SECURITY_ATTRIBUTES_AND_OPERATION_INFORMATION
 } TOKEN_SECURITY_ATTRIBUTES_AND_OPERATION_INFORMATION, * PTOKEN_SECURITY_ATTRIBUTES_AND_OPERATION_INFORMATION;
 
 // rev
+/**
+ * The TOKEN_PROCESS_TRUST_LEVEL structure contains information about
+ * the trust level assigned to a process token. The trust level is
+ * represented by a SID (Security Identifier) pointed to by TrustLevelSid.
+ */
 typedef struct _TOKEN_PROCESS_TRUST_LEVEL
 {
     PSID TrustLevelSid;
@@ -290,7 +293,6 @@ typedef struct _TOKEN_PROCESS_TRUST_LEVEL
  * \param DefaultDacl Optional pointer to a TOKEN_DEFAULT_DACL structure specifying the default DACL for the token.
  * \param Source Pointer to a TOKEN_SOURCE structure specifying the source of the token.
  * \return NTSTATUS code indicating success or failure.
- * \sa https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ntifs/nf-ntifs-ntcreatetoken
  */
 __kernel_entry NTSYSCALLAPI
 NTSTATUS
@@ -345,7 +347,7 @@ ZwCreateToken(
  * \param HandleCount Number of handles in the Handles array.
  * \param Handles Optional pointer to an array of handles to be associated with the token.
  * \return NTSTATUS code indicating success or failure.
- * \sa https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ntifs/nf-ntifs-ntcreatelowboxtoken
+ * \sa https://learn.microsoft.com/en-us/windows/win32/secauthz/ntcreatelowboxtoken
  */
 __kernel_entry NTSYSCALLAPI
 NTSTATUS
@@ -399,7 +401,6 @@ ZwCreateLowBoxToken(
  * \param DefaultDacl Optional pointer to a TOKEN_DEFAULT_DACL structure specifying the default DACL for the token.
  * \param Source Pointer to a TOKEN_SOURCE structure specifying the source of the token.
  * \return NTSTATUS code indicating success or failure.
- * \sa https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ntifs/nf-ntifs-ntcreatetokenex
  */
 __kernel_entry NTSYSCALLAPI
 NTSTATUS
@@ -1590,7 +1591,6 @@ ZwAccessCheckByTypeResultListAndAuditAlarmByHandle(
  * \param AccessGranted Specifies a flag that determines whether access was granted.
  * \param GenerateOnClose A pointer to a flag set by the audit-generation routine when the function returns.
  * \return NTSTATUS Successful or errant status.
- * \sa https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-openobjectauditalarma
  */
 __kernel_entry NTSYSCALLAPI
 NTSTATUS
@@ -1639,7 +1639,6 @@ ZwOpenObjectAuditAlarm(
  * \param Privileges A pointer to a PRIVILEGE_SET structure that specifies the privileges used to gain access.
  * \param AccessGranted Specifies a flag that determines whether access was granted.
  * \return NTSTATUS Successful or errant status.
- * \sa https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-privilegeobjectauditalarma
  */
 __kernel_entry NTSYSCALLAPI
 NTSTATUS
@@ -1673,7 +1672,6 @@ ZwPrivilegeObjectAuditAlarm(
  * \param HandleId A pointer to a unique value representing the client's handle to the object.
  * \param GenerateOnClose Specifies a flag that determines whether to generate an audit on close.
  * \return NTSTATUS Successful or errant status.
- * \sa https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-closeobjectauditalarma
  */
 __kernel_entry NTSYSCALLAPI
 NTSTATUS
@@ -1701,7 +1699,6 @@ ZwCloseObjectAuditAlarm(
  * \param HandleId A pointer to a unique value representing the client's handle to the object.
  * \param GenerateOnClose Specifies a flag that determines whether to generate an audit on close.
  * \return NTSTATUS Successful or errant status.
- * \sa https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-deleteobjectauditalarma
  */
 __kernel_entry NTSYSCALLAPI
 NTSTATUS
@@ -1731,7 +1728,6 @@ ZwDeleteObjectAuditAlarm(
  * \param Privileges A pointer to a PRIVILEGE_SET structure that specifies the privileges used to access the service.
  * \param AccessGranted Specifies a flag that determines whether access was granted.
  * \return NTSTATUS Successful or errant status.
- * \sa https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-privilegedserviceauditalarma
  */
 __kernel_entry NTSYSCALLAPI
 NTSTATUS
@@ -1842,6 +1838,41 @@ LsaFreeReturnBuffer(
 }
 
 #endif // !_KERNEL_MODE
+
+
+//
+// KSecDD FS control definitions
+//
+#define KSEC_DEVICE_NAME L"\\Device\\KSecDD"
+#define IOCTL_KSEC_CONNECT_LSA                      CTL_CODE(FILE_DEVICE_KSEC,  0, METHOD_BUFFERED,     FILE_WRITE_ACCESS )
+#define IOCTL_KSEC_RNG                              CTL_CODE(FILE_DEVICE_KSEC,  1, METHOD_BUFFERED,     FILE_ANY_ACCESS )
+#define IOCTL_KSEC_RNG_REKEY                        CTL_CODE(FILE_DEVICE_KSEC,  2, METHOD_BUFFERED,     FILE_ANY_ACCESS )
+#define IOCTL_KSEC_ENCRYPT_MEMORY                   CTL_CODE(FILE_DEVICE_KSEC,  3, METHOD_OUT_DIRECT,   FILE_ANY_ACCESS )
+#define IOCTL_KSEC_DECRYPT_MEMORY                   CTL_CODE(FILE_DEVICE_KSEC,  4, METHOD_OUT_DIRECT,   FILE_ANY_ACCESS )
+#define IOCTL_KSEC_ENCRYPT_MEMORY_CROSS_PROC        CTL_CODE(FILE_DEVICE_KSEC,  5, METHOD_OUT_DIRECT,   FILE_ANY_ACCESS )
+#define IOCTL_KSEC_DECRYPT_MEMORY_CROSS_PROC        CTL_CODE(FILE_DEVICE_KSEC,  6, METHOD_OUT_DIRECT,   FILE_ANY_ACCESS )
+#define IOCTL_KSEC_ENCRYPT_MEMORY_SAME_LOGON        CTL_CODE(FILE_DEVICE_KSEC,  7, METHOD_OUT_DIRECT,   FILE_ANY_ACCESS )
+#define IOCTL_KSEC_DECRYPT_MEMORY_SAME_LOGON        CTL_CODE(FILE_DEVICE_KSEC,  8, METHOD_OUT_DIRECT,   FILE_ANY_ACCESS )
+#define IOCTL_KSEC_FIPS_GET_FUNCTION_TABLE          CTL_CODE(FILE_DEVICE_KSEC,  9, METHOD_BUFFERED,     FILE_ANY_ACCESS )
+#define IOCTL_KSEC_ALLOC_POOL                       CTL_CODE(FILE_DEVICE_KSEC, 10, METHOD_BUFFERED,     FILE_ANY_ACCESS )
+#define IOCTL_KSEC_FREE_POOL                        CTL_CODE(FILE_DEVICE_KSEC, 11, METHOD_BUFFERED,     FILE_ANY_ACCESS )
+#define IOCTL_KSEC_COPY_POOL                        CTL_CODE(FILE_DEVICE_KSEC, 12, METHOD_BUFFERED,     FILE_ANY_ACCESS )
+#define IOCTL_KSEC_DUPLICATE_HANDLE                 CTL_CODE(FILE_DEVICE_KSEC, 13, METHOD_BUFFERED,     FILE_ANY_ACCESS )
+#define IOCTL_KSEC_REGISTER_EXTENSION               CTL_CODE(FILE_DEVICE_KSEC, 14, METHOD_BUFFERED,     FILE_ANY_ACCESS )
+#define IOCTL_KSEC_CLIENT_CALLBACK                  CTL_CODE(FILE_DEVICE_KSEC, 15, METHOD_BUFFERED,     FILE_ANY_ACCESS )
+#define IOCTL_KSEC_GET_BCRYPT_EXTENSION             CTL_CODE(FILE_DEVICE_KSEC, 16, METHOD_BUFFERED,     FILE_ANY_ACCESS )
+#define IOCTL_KSEC_GET_SSL_EXTENSION                CTL_CODE(FILE_DEVICE_KSEC, 17, METHOD_BUFFERED,     FILE_ANY_ACCESS )
+#define IOCTL_KSEC_GET_DEVICECONTROL_EXTENSION      CTL_CODE(FILE_DEVICE_KSEC, 18, METHOD_BUFFERED,     FILE_ANY_ACCESS )
+#define IOCTL_KSEC_ALLOC_VM                         CTL_CODE(FILE_DEVICE_KSEC, 19, METHOD_BUFFERED,     FILE_ANY_ACCESS )
+#define IOCTL_KSEC_FREE_VM                          CTL_CODE(FILE_DEVICE_KSEC, 20, METHOD_BUFFERED,     FILE_ANY_ACCESS )
+#define IOCTL_KSEC_COPY_VM                          CTL_CODE(FILE_DEVICE_KSEC, 21, METHOD_BUFFERED,     FILE_ANY_ACCESS )
+#define IOCTL_KSEC_CLIENT_FREE_VM                   CTL_CODE(FILE_DEVICE_KSEC, 22, METHOD_BUFFERED,     FILE_ANY_ACCESS )
+#define IOCTL_KSEC_INSERT_PROTECTED_PROCESS_ADDRESS CTL_CODE(FILE_DEVICE_KSEC, 23, METHOD_BUFFERED,     FILE_ANY_ACCESS )
+#define IOCTL_KSEC_REMOVE_PROTECTED_PROCESS_ADDRESS CTL_CODE(FILE_DEVICE_KSEC, 24, METHOD_BUFFERED,     FILE_ANY_ACCESS )
+#define IOCTL_KSEC_GET_BCRYPT_EXTENSION2            CTL_CODE(FILE_DEVICE_KSEC, 25, METHOD_BUFFERED,     FILE_ANY_ACCESS )
+#define IOCTL_KSEC_IPC_GET_QUEUED_FUNCTION_CALLS    CTL_CODE(FILE_DEVICE_KSEC, 26, METHOD_OUT_DIRECT,   FILE_ANY_ACCESS)
+#define IOCTL_KSEC_IPC_SET_FUNCTION_RETURN          CTL_CODE(FILE_DEVICE_KSEC, 27, METHOD_NEITHER,      FILE_ANY_ACCESS)
+
 
 //
 // Only Kernel

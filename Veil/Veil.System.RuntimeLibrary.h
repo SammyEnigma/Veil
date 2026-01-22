@@ -2186,7 +2186,11 @@ RtlContractHashTable(
 typedef struct _RTL_RB_TREE
 {
     PRTL_BALANCED_NODE Root;
-    PRTL_BALANCED_NODE Min;
+    union
+    {
+        UCHAR Encoded : 1;
+        PRTL_BALANCED_NODE Min;
+    };
 } RTL_RB_TREE, * PRTL_RB_TREE;
 
 NTSYSAPI
@@ -2246,6 +2250,12 @@ RtlRemovePointerMapping(
 // Critical sections
 //
 
+/**
+ * The RtlInitializeCriticalSection routine initializes a critical section object.
+ *
+ * \param CriticalSection A pointer to the critical section object.
+ * \sa https://learn.microsoft.com/en-us/windows/win32/api/synchapi/nf-synchapi-initializecriticalsection
+ */
 NTSYSAPI
 NTSTATUS
 NTAPI
@@ -2253,6 +2263,13 @@ RtlInitializeCriticalSection(
     _Out_ PRTL_CRITICAL_SECTION CriticalSection
 );
 
+/**
+ * The RtlInitializeCriticalSectionAndSpinCount routine initializes a critical section object and sets the spin count for the critical section.
+ *
+ * \param CriticalSection A pointer to the critical section object.
+ * \param SpinCount The spin count for the critical section object. On single-processor systems, the spin count is ignored.
+ * \sa https://learn.microsoft.com/en-us/windows/win32/api/synchapi/nf-synchapi-initializecriticalsectionandspincount
+ */
 _Must_inspect_result_
 NTSYSAPI
 NTSTATUS
@@ -2262,6 +2279,14 @@ RtlInitializeCriticalSectionAndSpinCount(
     _In_ ULONG SpinCount
 );
 
+/**
+ * The RtlInitializeCriticalSectionEx routine initializes a critical section object and sets the spin count for the critical section with flags.
+ *
+ * \param CriticalSection A pointer to the critical section object.
+ * \param SpinCount The spin count for the critical section object. On single-processor systems, the spin count is ignored.
+ * \param Flags This parameter can be 0 or the CRITICAL_SECTION_NO_DEBUG_INFO flag.
+ * \sa https://learn.microsoft.com/en-us/windows/win32/api/synchapi/nf-synchapi-initializecriticalsectionex
+ */
 NTSYSAPI
 NTSTATUS
 NTAPI
@@ -5000,22 +5025,26 @@ typedef struct _RTL_USER_PROCESS_PARAMETERS32
 
 STATIC_ASSERT(sizeof(RTL_USER_PROCESS_PARAMETERS32) == 708);
 
-#define RTL_USER_PROC_PARAMS_NORMALIZED     0x00000001
-#define RTL_USER_PROC_PROFILE_USER          0x00000002
-#define RTL_USER_PROC_PROFILE_KERNEL        0x00000004
-#define RTL_USER_PROC_PROFILE_SERVER        0x00000008
-#define RTL_USER_PROC_RESERVE_1MB           0x00000020
-#define RTL_USER_PROC_RESERVE_16MB          0x00000040
-#define RTL_USER_PROC_CASE_SENSITIVE        0x00000080
-#define RTL_USER_PROC_DISABLE_HEAP_DECOMMIT 0x00000100
-#define RTL_USER_PROC_DLL_REDIRECTION_LOCAL 0x00001000
-#define RTL_USER_PROC_APP_MANIFEST_PRESENT  0x00002000
-#define RTL_USER_PROC_IMAGE_KEY_MISSING     0x00004000
-#define RTL_USER_PROC_OPTIN_PROCESS         0x00020000
-#define RTL_USER_PROC_SECURE_PROCESS        0x80000000
+// RTL_USER_PROCESS_PARAMETERS Flags
+#define RTL_USER_PROC_PARAMS_NORMALIZED                 0x00000001
+#define RTL_USER_PROC_PROFILE_USER                      0x00000002
+#define RTL_USER_PROC_PROFILE_KERNEL                    0x00000004
+#define RTL_USER_PROC_PROFILE_SERVER                    0x00000008
+#define RTL_USER_PROC_RESERVE_1MB                       0x00000020
+#define RTL_USER_PROC_RESERVE_16MB                      0x00000040
+#define RTL_USER_PROC_CASE_SENSITIVE                    0x00000080
+#define RTL_USER_PROC_DISABLE_HEAP_DECOMMIT             0x00000100
+#define RTL_USER_PROC_DLL_REDIRECTION_LOCAL             0x00001000
+#define RTL_USER_PROC_APP_MANIFEST_PRESENT              0x00002000
+#define RTL_USER_PROC_IMAGE_KEY_MISSING                 0x00004000
+#define RTL_USER_PROC_DEV_OVERRIDE_ENABLED              0x00008000
+#define RTL_USER_PROC_OPTIN_PROCESS                     0x00020000
+#define RTL_USER_PROC_SESSION_OWNER                     0x00040000
+#define RTL_USER_PROC_HANDLE_USER_CALLBACK_EXCEPTIONS   0x00080000
+#define RTL_USER_PROC_PROTECTED_PROCESS                 0x00400000
+#define RTL_USER_PROC_SECURE_PROCESS                    0x80000000
 
 #ifndef _KERNEL_MODE
-
 NTSYSAPI
 NTSTATUS
 NTAPI
@@ -5150,6 +5179,18 @@ typedef struct _RTL_USER_PROCESS_EXTENDED_PARAMETERS
     HANDLE JobHandle;
 } RTL_USER_PROCESS_EXTENDED_PARAMETERS, * PRTL_USER_PROCESS_EXTENDED_PARAMETERS;
 
+/**
+ * The RtlCreateUserProcessEx routine creates a new process and its primary thread, with extended parameters.
+ *
+ * \param NtImagePathName Pointer to a UNICODE_STRING that specifies the path of the image to be executed.
+ * \param ProcessParameters Pointer to a RTL_USER_PROCESS_PARAMETERS structure that contains process parameter information.
+ * \param InheritHandles If TRUE, each inheritable handle in the calling process is inherited by the new process.
+ * \param ProcessExtendedParameters Optional pointer to a RTL_USER_PROCESS_EXTENDED_PARAMETERS structure for additional process creation options. Can be NULL.
+ * \param ProcessInformation Pointer to a RTL_USER_PROCESS_INFORMATION structure that receives information about the new process and its primary thread.
+ * \return NTSTATUS Successful or errant status.
+ * \remarks This function is available on Windows 10 RS2 and later. It allows for more advanced process creation scenarios than RtlCreateUserProcess.
+ * \sa https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-createprocessw
+ */
 NTSYSAPI
 NTSTATUS
 NTAPI
@@ -5163,7 +5204,7 @@ RtlCreateUserProcessEx(
 #endif
 
 /**
- * Ends the calling process and all its threads.
+ * The RtlExitUserProcess routine ends the calling process and all its threads.
  *
  * \param ExitStatus The exit status for the process and all threads.
  * \sa https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-exitprocess
@@ -5185,7 +5226,7 @@ RtlExitUserProcess(
 
 // private
 /**
- * Creates a new process from the current process.
+ * The RtlCloneUserProcess routine creates a new process from the current process.
  *
  * \param ProcessFlags The path of the image to be executed.
  * \param ProcessSecurityDescriptor The security descriptor for the new process. If NULL, the process gets a default security descriptor.
@@ -5276,7 +5317,7 @@ RtlCreateProcessReflection(
     _In_opt_ PVOID StartRoutine,
     _In_opt_ PVOID StartContext,
     _In_opt_ HANDLE EventHandle,
-    _Out_opt_ PRTLP_PROCESS_REFLECTION_REFLECTION_INFORMATION ReflectionInformation
+    _Out_opt_ PPROCESS_REFLECTION_INFORMATION ReflectionInformation
 );
 
 /**
@@ -5290,7 +5331,7 @@ RtlCreateProcessReflection(
  */
 NTSYSAPI
 NTSTATUS
-STDAPIVCALLTYPE
+NTAPI
 RtlSetProcessIsCritical(
     _In_ BOOLEAN NewValue,
     _Out_opt_ PBOOLEAN OldValue,
@@ -5308,7 +5349,7 @@ RtlSetProcessIsCritical(
  */
 NTSYSAPI
 NTSTATUS
-STDAPIVCALLTYPE
+NTAPI
 RtlSetThreadIsCritical(
     _In_ BOOLEAN NewValue,
     _Out_opt_ PBOOLEAN OldValue,
@@ -5331,7 +5372,7 @@ RtlSetThreadSubProcessTag(
 
 // rev
 /**
- * Validates the process protection level.
+ * The RtlValidProcessProtection function validates the process protection level.
  *
  * \param ProcessProtection Pointer to a PS_PROTECTION structure describing the protection.
  * \return TRUE if the protection level is valid, FALSE otherwise.
@@ -5345,7 +5386,7 @@ RtlValidProcessProtection(
 
 // rev
 /**
- * Tests whether a source protection level can access a target protection level.
+ * The RtlTestProtectedAccess function tests whether a source protection level can access a target protection level.
  *
  * \param Source Pointer to a PS_PROTECTION structure for the source.
  * \param Target Pointer to a PS_PROTECTION structure for the target.
@@ -5361,6 +5402,13 @@ RtlTestProtectedAccess(
 
 #if (NTDDI_VERSION >= NTDDI_WIN10_RS3)
 // rev
+/**
+ * The RtlIsCurrentProcess function determines whether the specified process handle refers to the current process.
+ *
+ * \param ProcessHandle Handle to the process to compare with the current process.
+ * \return TRUE if the handle refers to the current process; otherwise, FALSE.
+ * \remarks Internally compares the specified handle with the current process handle using NtCompareObjects.
+ */
 NTSYSAPI
 BOOLEAN
 NTAPI
@@ -5369,6 +5417,13 @@ RtlIsCurrentProcess( // NtCompareObjects(NtCurrentProcess(), ProcessHandle)
 );
 
 // rev
+/**
+ * The RtlIsCurrentProcess function determines whether the specified process handle refers to the current process.
+ *
+ * \param ProcessHandle Handle to the process to compare with the current process.
+ * \return TRUE if the handle refers to the current process; otherwise, FALSE.
+ * \remarks Internally compares the specified handle with the current process handle using NtCompareObjects.
+ */
 NTSYSAPI
 BOOLEAN
 NTAPI
@@ -5420,6 +5475,13 @@ CreateProcessInternalW(
 // Threads
 //
 
+/**
+ * The RtlExitUserThread routine ends the calling thread and returns the specified exit status.
+ *
+ * \param ExitStatus The exit status for the thread.
+ * \remarks This function does not return to the caller. It terminates the thread immediately.
+ * \sa https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-exitthread
+ */
 DECLSPEC_NORETURN
 NTSYSAPI
 VOID
@@ -5429,6 +5491,21 @@ RtlExitUserThread(
 );
 
 #ifndef _KERNEL_MODE
+/**
+ * The RtlCreateUserThread routine creates a thread in the specified process.
+ *
+ * \param ProcessHandle Handle to the process in which the thread is to be created.
+ * \param ThreadSecurityDescriptor Optional pointer to a security descriptor for the new thread. If NULL, the thread gets a default security descriptor.
+ * \param CreateSuspended If TRUE, the thread is created in a suspended state and must be resumed explicitly. If FALSE, the thread starts running immediately.
+ * \param ZeroBits Optional number of high-order address bits that must be zero in the stack's base address. Usually set to 0.
+ * \param MaximumStackSize Optional maximum size, in bytes, of the stack for the new thread. If 0, the default size is used.
+ * \param CommittedStackSize Optional initial size, in bytes, of committed stack for the new thread. If 0, the default size is used.
+ * \param StartAddress Pointer to the application-defined function to be executed by the thread.
+ * \param Parameter Optional pointer to a variable to be passed to the thread function.
+ * \param ThreadHandle Optional pointer to a variable that receives the handle of the new thread.
+ * \param ClientId Optional pointer to a CLIENT_ID structure that receives the thread and process identifiers.
+ * \return NTSTATUS Successful or errant status.
+ */
 NTSYSAPI
 NTSTATUS
 NTAPI
@@ -5446,6 +5523,12 @@ RtlCreateUserThread(
 );
 
 // rev
+/**
+ * The RtlIsCurrentThreadAttachExempt routine determines whether the current thread is exempt from attach notifications.
+ *
+ * \return TRUE if the current thread is attach-exempt; otherwise, FALSE.
+ * \remarks Attach-exempt threads do not receive DLL_THREAD_ATTACH and DLL_THREAD_DETACH notifications.
+ */
 NTSYSAPI
 BOOLEAN
 NTAPI
@@ -5454,6 +5537,17 @@ RtlIsCurrentThreadAttachExempt(
 );
 
 // private
+/**
+ * The RtlCreateUserStack routine allocates and initializes a user-mode stack for a new thread.
+ *
+ * \param CommittedStackSize The initial size, in bytes, of committed stack. If 0, the default is used.
+ * \param MaximumStackSize The maximum size, in bytes, of the stack. If 0, the default is used.
+ * \param ZeroBits The number of high-order address bits that must be zero in the stack's base address. Usually set to 0.
+ * \param PageSize The system page size, in bytes.
+ * \param ReserveAlignment The alignment for the reserved stack region.
+ * \param InitialTeb Pointer to an INITIAL_TEB structure that receives the stack information.
+ * \return NTSTATUS Successful or errant status.
+ */
 NTSYSAPI
 NTSTATUS
 NTAPI
@@ -5467,6 +5561,12 @@ RtlCreateUserStack(
 );
 
 // private
+/**
+ * The RtlFreeUserStack routine frees a user-mode stack previously allocated for a thread.
+ *
+ * \param AllocationBase The base address of the stack allocation to free.
+ * \return NTSTATUS Successful or errant status.
+ */
 NTSYSAPI
 NTSTATUS
 NTAPI
@@ -5661,6 +5761,18 @@ RtlWow64SetThreadContext(
 );
 #endif
 
+/**
+ * The RtlRemoteCall routine calls a function in the context of a specified thread in a remote process.
+ *
+ * \param ProcessHandle Handle to the process in which the thread resides.
+ * \param ThreadHandle Handle to the thread in which the function is to be called.
+ * \param CallSite Address of the function to call in the remote process.
+ * \param ArgumentCount Number of arguments to pass to the function.
+ * \param Arguments Pointer to an array of arguments to pass to the function. Can be NULL if no arguments are needed.
+ * \param PassContext If TRUE, the thread context is passed to the function.
+ * \param AlreadySuspended If TRUE, the thread is already suspended and does not need to be suspended by this routine.
+ * \return NTSTATUS Successful or errant status.
+ */
 NTSYSAPI
 NTSTATUS
 NTAPI
@@ -6116,6 +6228,9 @@ RtlImageNtHeader(
     _In_ PVOID BaseOfImage
 );
 
+/**
+ * Flag to disable range checking in RtlImageNtHeaderEx.
+ */
 #define RTL_IMAGE_NT_HEADER_EX_FLAG_NO_RANGE_CHECK 0x00000001
 
 NTSYSAPI
@@ -6205,7 +6320,7 @@ RtlPcToFilePath(
 #endif
 
 /**
- * Retrieves the base address of the image that contains the specified PC value.
+ * The RtlPcToFileHeader routine retrieves the base address of the image that contains the specified PC value.
  *
  * \param PcValue The PC value. The function searches all modules mapped into the address space of the calling process for a module that contains this value.
  * \param BaseOfImage The base address of the image containing the PC value. This value must be added to any relative addresses in the headers to locate the image.
@@ -7320,7 +7435,7 @@ RtlNtPathNameToDosPathName(
     _Reserved_ ULONG Flags,
     _Inout_ PRTL_UNICODE_STRING_BUFFER Path,
     _Out_opt_ PULONG Disposition, // RtlDetermineDosPathNameType_U
-    _Out_opt_ PWSTR* FilePart
+    _Inout_opt_ PWSTR* FilePart
 );
 
 NTSYSAPI
@@ -9239,6 +9354,8 @@ RtlGetLastNtStatus(
     VOID
 );
 
+_Check_return_
+_Post_equals_last_error_
 NTSYSAPI
 LONG
 NTAPI
@@ -10309,7 +10426,7 @@ NTSTATUS
 NTAPI
 RtlCreateAtomTable(
     _In_ ULONG NumberOfBuckets,
-    _Out_ PVOID* AtomTableHandle
+    _Inout_ PVOID* AtomTableHandle
 );
 
 NTSYSAPI
@@ -10919,6 +11036,15 @@ RtlSetGroupSecurityDescriptor(
     _In_ BOOLEAN GroupDefaulted
 );
 
+/**
+ * The RtlGetGroupSecurityDescriptor routine returns the primary group information for a given security descriptor.
+ *
+ * \param SecurityDescriptor Pointer to the security descriptor whose primary group information is to be returned.
+ * \param Group Pointer to a variable that receives a pointer to the security identifier (SID) for the primary group.
+ * \param GroupDefaulted Pointer to a Boolean variable that receives the value of the SE_GROUP_DEFAULTED flag.
+ * \return NTSTATUS Successful or errant status.
+ * \see https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ntifs/nf-ntifs-rtlgetgroupsecuritydescriptor
+ */
 _IRQL_requires_max_(APC_LEVEL)
 NTSYSAPI
 NTSTATUS
@@ -11949,6 +12075,16 @@ RtlQueueWorkItem(
     _In_ ULONG Flags
 );
 
+/**
+ * Associates the I/O completion port owned by the thread pool with the specified file handle.
+ * On completion of an I/O request involving this file, a non-I/O worker thread will execute the specified callback function.
+ *
+ * \param FileHandle A handle to the file or device for which to set the I/O completion callback.
+ * \param Function A pointer to the callback function to be executed when an I/O operation completes.
+ * \param Flags Reserved; must be zero.
+ * \return NTSTATUS Successful or errant status.
+ * \sa https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-bindiocompletioncallback
+ */
 NTSYSAPI
 NTSTATUS
 NTAPI
@@ -12007,7 +12143,14 @@ RtlDelayExecution(
 //
 
 #ifndef _KERNEL_MODE
-
+/**
+ * Creates a queue for timers.
+ *
+ * \param TimerQueueHandle A pointer to a variable that receives the handle to the newly created timer queue.
+ * \return NTSTATUS Successful or errant status.
+ * \remarks Timer-queue timers are lightweight objects that enable you to specify a callback function to be called at a specified time.
+ * \sa https://learn.microsoft.com/en-us/windows/win32/api/threadpoollegacyapiset/nf-threadpoollegacyapiset-createtimerqueue
+ */
 NTSYSAPI
 NTSTATUS
 NTAPI
@@ -12015,6 +12158,20 @@ RtlCreateTimerQueue(
     _Out_ PHANDLE TimerQueueHandle
 );
 
+/**
+ * Creates a timer-queue timer.
+ *
+ * \param TimerQueueHandle A handle to the timer queue. This handle is returned by a previous call to RtlCreateTimerQueue.
+ * \param Handle A pointer to a variable that receives the handle to the newly created timer-queue timer.
+ * \param Function A pointer to the callback function to be executed when the timer expires.
+ * \param Context A pointer to a variable to be passed to the callback function.
+ * \param DueTime The amount of time in milliseconds relative to the current time that must elapse before the timer is signaled for the first time.
+ * \param Period The period of the timer in milliseconds. If this value is zero, the timer is signaled once; otherwise, it is signaled periodically.
+ * \param Flags The flags that control the behavior of the timer. This parameter can be zero or one of the following values:
+ * WT_EXECUTEDEFAULT, WT_EXECUTEONLYONCE, WT_EXECUTELONGFUNCTION, WT_EXECUTEINTIMERTHREAD, WT_EXECUTEINPERSISTENTTHREAD, WT_TRANSFER_IMPERSONATION.
+ * \return NTSTATUS Successful or errant status.
+ * \sa https://learn.microsoft.com/en-us/windows/win32/api/threadpoollegacyapiset/nf-threadpoollegacyapiset-createtimerqueuetimer
+ */
 NTSYSAPI
 NTSTATUS
 NTAPI
@@ -12298,7 +12455,7 @@ RtlDeleteRegistryValue(
 
 // rev
 /**
- * Enables thread profiling on the specified thread.
+ * The RtlEnableThreadProfiling routine enables thread profiling on the specified thread.
  *
  * \param ThreadHandle The handle to the thread on which you want to enable profiling. This must be the current thread.
  * \param Flags To receive thread profiling data such as context switch count, set this parameter to THREAD_PROFILING_FLAG_DISPATCH; otherwise, set to 0.
@@ -12319,7 +12476,7 @@ RtlEnableThreadProfiling(
 
 // rev
 /**
- * Disables thread profiling.
+ * The RtlDisableThreadProfiling routine disables thread profiling.
  *
  * \param PerformanceDataHandle The handle that the RtlEnableThreadProfiling function returned.
  * \return NTSTATUS Successful or errant status.
@@ -12334,7 +12491,7 @@ RtlDisableThreadProfiling(
 
 // rev
 /**
- * Determines whether thread profiling is enabled for the specified thread.
+ * The RtlQueryThreadProfiling routine determines whether thread profiling is enabled for the specified thread.
  *
  * \param ThreadHandle The handle to the thread on which you want to enable profiling. This must be the current thread.
  * \param Enabled Is TRUE if thread profiling is enabled for the specified thread; otherwise, FALSE.
@@ -12351,7 +12508,7 @@ RtlQueryThreadProfiling(
 
 // rev
 /**
- * Reads the specified profiling data associated with the thread.
+ * The RtlReadThreadProfilingData routine reads the specified profiling data associated with the thread.
  *
  * \param PerformanceDataHandle The handle that the RtlEnableThreadProfiling function returned.
  * \param Flags One or more flags set when you called the RtlEnableThreadProfiling function that specify the counter data to read.
@@ -12398,7 +12555,7 @@ RtlQueueApcWow64Thread(
 );
 
 /**
- * Enables or disables file system redirection for the calling thread.
+ * The RtlWow64EnableFsRedirection routine enables or disables file system redirection for the calling thread.
  *
  * \param Wow64FsEnableRedirection If TRUE, requests redirection be enabled; if FALSE, requests redirection be disabled.
  * \return NTSTATUS Successful or errant status.
@@ -12412,10 +12569,11 @@ RtlWow64EnableFsRedirection(
 );
 
 /**
- * Enables or disables file system redirection for the calling thread.
+ * The RtlWow64EnableFsRedirectionEx routine enables or disables file system redirection for the calling thread.
  *
  * \param Wow64FsEnableRedirection If TRUE, requests redirection be enabled; if FALSE, requests redirection be disabled.
- * \param OldFsRedirectionLevel The WOW64 file system redirection value. The system uses this parameter to store information necessary to revert (re-enable) file system redirection.
+ * \param OldFsRedirectionLevel The WOW64 file system redirection value. The system uses this parameter to store information
+ *  necessary to revert (re-enable) file system redirection.
  * \return NTSTATUS Successful or errant status.
  * \sa https://learn.microsoft.com/en-us/windows/win32/api/wow64apiset/nf-wow64apiset-wow64disablewow64fsredirection
  */
@@ -12433,6 +12591,14 @@ RtlWow64EnableFsRedirectionEx(
 // Misc
 //
 
+/**
+ * The RtlComputeCrc32 routine computes the CRC32 checksum for a buffer, allowing for incremental computation by providing a partial CRC value.
+ *
+ * \param PartialCrc The initial CRC32 value. Use 0 for a new computation, or the result of a previous call to continue CRC calculation over additional data.
+ * \param Buffer Pointer to the buffer containing the data to compute the CRC32 for.
+ * \param Length The length, in bytes, of the buffer.
+ * \return The computed CRC32 value.
+ */
 NTSYSAPI
 ULONG32
 NTAPI
@@ -12443,7 +12609,7 @@ RtlComputeCrc32(
 );
 
 /**
- * Encodes the specified pointer. Encoded pointers can be used to provide another layer of protection for pointer values.
+ * The RtlEncodePointer routine encodes the specified pointer. Encoded pointers can be used to provide another layer of protection for pointer values.
  *
  * \param Ptr The system pointer to be encoded.
  * \return The function returns the encoded pointer.
@@ -12458,7 +12624,7 @@ RtlEncodePointer(
 );
 
 /**
- * Decodes a pointer that was previously encoded with RtlEncodePointer.
+ * The RtlDecodePointer routine decodes a pointer that was previously encoded with RtlEncodePointer.
  *
  * \param Ptr The system pointer to be decoded.
  * \return The function returns the decoded pointer.
@@ -12475,7 +12641,8 @@ RtlDecodePointer(
 // _KERNEL_MODE begin
 
 /**
- * Encodes the specified pointer with a system-specific value. Encoded pointers can be used to provide another layer of protection for pointer values.
+ * The RtlEncodeSystemPointer routine encodes the specified pointer with a system-specific value.
+ * Encoded pointers can be used to provide another layer of protection for pointer values.
  *
  * \param Ptr The system pointer to be encoded.
  * \return The function returns the encoded pointer.
@@ -12489,7 +12656,7 @@ RtlEncodeSystemPointer(
 );
 
 /**
- * Decodes a pointer that was previously encoded with RtlEncodeSystemPointer.
+ * The RtlDecodeSystemPointer routine decodes a pointer that was previously encoded with RtlEncodeSystemPointer.
  *
  * \param Ptr The pointer to be decoded.
  * \return The function returns the decoded pointer.
@@ -12505,12 +12672,13 @@ RtlDecodeSystemPointer(
 #if (NTDDI_VERSION >= NTDDI_WIN10)
 // rev
 /**
- * Encodes the specified pointer of the specified process. Encoded pointers can be used to provide another layer of protection for pointer values.
+ * The RtlEncodeRemotePointer routine encodes the specified pointer of the specified process.
+ * Encoded pointers can be used to provide another layer of protection for pointer values.
  *
  * \param ProcessHandle Handle to the remote process that owns the pointer.
  * \param Pointer The pointer to be encoded.
  * \param EncodedPointer The encoded pointer.
- * \return NTSTATUS Successful or errant status.
+ * \return HRESULT Successful or errant status.
  * \sa https://learn.microsoft.com/en-us/previous-versions/dn877135(v=vs.85)
  */
 NTSYSAPI
@@ -12524,12 +12692,13 @@ RtlEncodeRemotePointer(
 
 // rev
 /**
- * Decodes a pointer in a specified process that was previously encoded with RtlEncodePointer or RtlEncodeRemotePointer.
+ * The RtlDecodeRemotePointer routine decodes a pointer in a specified process that was previously
+ * encoded with RtlEncodePointer or RtlEncodeRemotePointer.
  *
  * \param ProcessHandle Handle to the remote process that owns the pointer.
  * \param Pointer The pointer to be decoded.
- * \param EncodedPointer The decoded pointer.
- * \return NTSTATUS Successful or errant status.
+ * \param DecodedPointer The decoded pointer.
+ * \return HRESULT Successful or errant status.
  * \sa https://learn.microsoft.com/en-us/previous-versions/dn877133(v=vs.85)
  */
 NTSYSAPI
@@ -12547,7 +12716,7 @@ RtlDecodeRemotePointer(
 #if (NTDDI_VERSION >= NTDDI_WINTHRESHOLD)
 // rev
 /**
- * Determines whether the specified processor feature is supported by the current computer.
+ * The RtlIsProcessorFeaturePresent routine determines whether the specified processor feature is supported by the current computer.
  *
  * \param ProcessorFeature The processor feature to be tested.
  * \return If the feature is supported, the return value is a nonzero value.
@@ -12563,7 +12732,8 @@ RtlIsProcessorFeaturePresent(
 
 // rev
 /**
- * Retrieves the number of the processor the current thread was running on during the call to this function.
+ * The RtlGetCurrentProcessorNumber routine retrieves the number of the processor the current thread was running
+ * on during the call to this function.
  *
  * \return The function returns the current processor number.
  * \sa https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-getcurrentprocessornumber
@@ -12578,9 +12748,11 @@ RtlGetCurrentProcessorNumber(
 #if (NTDDI_VERSION >= NTDDI_WIN10)
 // rev
 /**
- * Retrieves the processor group and number of the logical processor in which the calling thread is running.
+ * The RtlGetCurrentProcessorNumberEx routine retrieves the processor group and number of the logical processor
+ * in which the calling thread is running.
  *
- * \param ProcessorNumber A pointer to a PROCESSOR_NUMBER structure that receives the processor group and number of the logical processor the calling thread is running.
+ * \param ProcessorNumber A pointer to a PROCESSOR_NUMBER structure that receives the processor group and number
+ * of the logical processor the calling thread is running.
  * \return This function does not return a value.
  * \sa https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-getcurrentprocessornumberex
  */
@@ -12664,8 +12836,10 @@ RtlGetCallersAddress( // Use the intrinsic _ReturnAddress instead.
 /**
  * The RtlGetEnabledExtendedFeatures routine returns a mask of extended processor features that are enabled by the system.
  *
- * \param FeatureMask A 64-bit feature mask. This parameter indicates a set of extended processor features for which the caller requests information about whether the features are enabled.
- * \return A 64-bitmask of enabled extended processor features. The routine calculates this mask as the intersection (bitwise AND) between all enabled features and the value of the FeatureMask parameter.
+ * \param FeatureMask A 64-bit feature mask. This parameter indicates a set of extended processor features for which the caller
+ * requests information about whether the features are enabled.
+ * \return A 64-bitmask of enabled extended processor features. The routine calculates this mask as the intersection (bitwise AND)
+ * between all enabled features and the value of the FeatureMask parameter.
  * \sa https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ntddk/nf-ntddk-rtlgetenabledextendedfeatures
  */
 _IRQL_requires_max_(PASSIVE_LEVEL)
@@ -12705,16 +12879,19 @@ RtlLocateSupervisorFeature(
 #define ELEVATION_FLAG_NO_SIGNATURE_CHECK 0x00000008
 
 // private
-typedef union _RTL_ELEVATION_FLAGS
+typedef struct _RTL_ELEVATION_FLAGS
 {
-    ULONG Flags;
-    struct
+    union
     {
-        ULONG ElevationEnabled : 1;
-        ULONG VirtualizationEnabled : 1;
-        ULONG InstallerDetectEnabled : 1;
-        ULONG AdminApprovalModeType : 2;
-        ULONG ReservedBits : 27;
+        ULONG Flags;
+        struct
+        {
+            ULONG ElevationEnabled : 1;
+            ULONG VirtualizationEnabled : 1;
+            ULONG InstallerDetectEnabled : 1;
+            ULONG AdminApprovalModeType : 2;
+            ULONG ReservedBits : 27;
+        };
     };
 } RTL_ELEVATION_FLAGS, * PRTL_ELEVATION_FLAGS;
 
@@ -12782,7 +12959,7 @@ RtlUnlockModuleSection(
 
 // private
 /**
- * The RTL_UNLOAD_EVENT_TRACE structure contains the unloaded module event information.
+ * The RTL_UNLOAD_EVENT_TRACE structure contains information about modules unloaded by the current process.
  *
  * \sa https://learn.microsoft.com/en-us/windows/win32/devnotes/rtlgetunloadeventtrace
  */
@@ -12809,7 +12986,7 @@ typedef struct _RTL_UNLOAD_EVENT_TRACE32
 } RTL_UNLOAD_EVENT_TRACE32, * PRTL_UNLOAD_EVENT_TRACE32;
 
 /**
- * Enables the dump code to get the unloaded module information from Ntdll.dll for storage in the minidump.
+ * The RtlGetUnloadEventTrace routine enables the dump code to get the unloaded module information from Ntdll.dll for storage in the minidump.
  *
  * \return A pointer to an array of unload events.
  * \sa https://learn.microsoft.com/en-us/windows/win32/devnotes/rtlgetunloadeventtrace
@@ -12822,7 +12999,7 @@ RtlGetUnloadEventTrace(
 );
 
 /**
- * Retrieves the size and location of the dynamically unloaded module list for the current process.
+ * The RtlGetUnloadEventTraceEx routine retrieves the size and location of the dynamically unloaded module list for the current process.
  *
  * \param ElementSize A pointer to a variable that contains the size of an element in the list.
  * \param ElementCount A pointer to a variable that contains the number of elements in the list.
@@ -12848,7 +13025,7 @@ RtlGetUnloadEventTraceEx(
 
 // rev
 /**
- * Retrieves the current value of the performance counter, which is a high resolution (<1us) time stamp that can be used for time-interval measurements.
+ * The RtlQueryPerformanceCounter routine retrieves the current value of the performance counter, which is a high resolution (<1us) time stamp that can be used for time-interval measurements.
  *
  * \param PerformanceCounter A pointer to a variable that receives the current performance-counter value, in counts.
  * \return Returns TRUE if the function succeeds, otherwise FALSE. On systems that run Windows XP or later, the function will always succeed and will thus never return zero.
@@ -12863,7 +13040,7 @@ RtlQueryPerformanceCounter(
 
 // rev
 /**
- * Retrieves the frequency of the performance counter. The frequency of the performance counter is fixed at system boot and is consistent across all processors.
+ * The RtlQueryPerformanceFrequency routine retrieves the frequency of the performance counter. The frequency of the performance counter is fixed at system boot and is consistent across all processors.
  * Therefore, the frequency need only be queried upon application initialization, and the result can be cached.
  *
  * \param PerformanceFrequency A pointer to a variable that receives the current performance-counter frequency, in counts per second.
@@ -13181,209 +13358,6 @@ RtlIsMultiUsersInSessionSku(
 #endif // NTDDI_VERSION < NTDDI_WIN10_RS1
 
 //
-// Windows Session Manager
-//
-
-#ifndef _KERNEL_MODE
-
-// private
-typedef enum _SMAPINUMBER
-{
-    SmNotImplementedApi = 0,
-    SmSessionCompleteApi = 1,
-    SmNotImplemented2Api = 2,
-    SmExecPgmApi = 3,
-    SmLoadDeferedSubsystemApi = 4,
-    SmStartCsrApi = 5,
-    SmStopCsrApi = 6,
-    SmStartServerSiloApi = 7,
-    SmMaxApiNumber = 8,
-} SMAPINUMBER, * PSMAPINUMBER;
-
-// private
-typedef struct _SMSESSIONCOMPLETE
-{
-    _In_ ULONG SessionId;
-    _In_ NTSTATUS CompletionStatus;
-} SMSESSIONCOMPLETE, * PSMSESSIONCOMPLETE;
-
-// private
-typedef struct _SMEXECPGM
-{
-    _In_ RTL_USER_PROCESS_INFORMATION ProcessInformation;
-    _In_ BOOLEAN DebugFlag;
-} SMEXECPGM, * PSMEXECPGM;
-
-// private
-typedef struct _SMLOADDEFERED
-{
-    _In_ ULONG SubsystemNameLength;
-    _In_ _Field_size_bytes_(SubsystemNameLength) WCHAR SubsystemName[32];
-} SMLOADDEFERED, * PSMLOADDEFERED;
-
-// private
-typedef struct _SMSTARTCSR
-{
-    _Inout_ ULONG MuSessionId;
-    _In_ ULONG InitialCommandLength;
-    _In_ _Field_size_bytes_(InitialCommandLength) WCHAR InitialCommand[128];
-    _Out_ HANDLE InitialCommandProcessId;
-    _Out_ HANDLE WindowsSubSysProcessId;
-} SMSTARTCSR, * PSMSTARTCSR;
-
-// private
-typedef struct _SMSTOPCSR
-{
-    _In_ ULONG MuSessionId;
-} SMSTOPCSR, * PSMSTOPCSR;
-
-// private
-typedef struct _SMSTARTSERVERSILO
-{
-    _In_ HANDLE JobHandle;
-    _In_ BOOLEAN CreateSuspended;
-} SMSTARTSERVERSILO, * PSMSTARTSERVERSILO;
-
-// private
-typedef struct _SMAPIMSG
-{
-    PORT_MESSAGE h;
-    SMAPINUMBER ApiNumber;
-    NTSTATUS ReturnedStatus;
-    union
-    {
-        union
-        {
-            SMSESSIONCOMPLETE SessionComplete;
-            SMEXECPGM ExecPgm;
-            SMLOADDEFERED LoadDefered;
-            SMSTARTCSR StartCsr;
-            SMSTOPCSR StopCsr;
-            SMSTARTSERVERSILO StartServerSilo;
-        };
-    } u;
-} SMAPIMSG, * PSMAPIMSG;
-
-// SbApiPort
-
-// private
-typedef enum _SBAPINUMBER
-{
-    SbCreateSessionApi = 0,
-    SbTerminateSessionApi = 1,
-    SbForeignSessionCompleteApi = 2,
-    SbCreateProcessApi = 3,
-    SbMaxApiNumber = 4,
-} SBAPINUMBER, * PSBAPINUMBER;
-
-// private
-typedef struct _SBCONNECTINFO
-{
-    _In_ ULONG SubsystemImageType;
-    _In_ WCHAR EmulationSubSystemPortName[120];
-} SBCONNECTINFO, * PSBCONNECTINFO;
-
-// private
-typedef struct _SBCREATESESSION
-{
-    _In_ ULONG SessionId;
-    _In_ RTL_USER_PROCESS_INFORMATION ProcessInformation;
-    _In_opt_ PVOID UserProfile;
-    _In_ ULONG DebugSession;
-    _In_ CLIENT_ID DebugUiClientId;
-} SBCREATESESSION, * PSBCREATESESSION;
-
-// private
-typedef struct _SBTERMINATESESSION
-{
-    _In_ ULONG SessionId;
-    _In_ NTSTATUS TerminationStatus;
-} SBTERMINATESESSION, * PSBTERMINATESESSION;
-
-// private
-typedef struct _SBFOREIGNSESSIONCOMPLETE
-{
-    _In_ ULONG SessionId;
-    _In_ NTSTATUS TerminationStatus;
-} SBFOREIGNSESSIONCOMPLETE, * PSBFOREIGNSESSIONCOMPLETE;
-
-// dbg/rev
-#define SMP_DEBUG_FLAG 0x00000001
-#define SMP_ASYNC_FLAG 0x00000002
-#define SMP_DONT_START 0x00000004
-
-// private
-typedef struct _SBCREATEPROCESSIN
-{
-    _In_ PUNICODE_STRING ImageFileName;
-    _In_ PUNICODE_STRING CurrentDirectory;
-    _In_ PUNICODE_STRING CommandLine;
-    _In_opt_ PUNICODE_STRING DefaultLibPath;
-    _In_ ULONG Flags; // SMP_*
-    _In_ ULONG DefaultDebugFlags;
-} SBCREATEPROCESSIN, * PSBCREATEPROCESSIN;
-
-// private
-typedef struct _SBCREATEPROCESSOUT
-{
-    _Out_ HANDLE Process;
-    _Out_ HANDLE Thread;
-    _Out_ ULONG SubSystemType;
-    _Out_ CLIENT_ID ClientId;
-} SBCREATEPROCESSOUT, * PSBCREATEPROCESSOUT;
-
-// private
-typedef struct _SBCREATEPROCESS
-{
-    union
-    {
-        SBCREATEPROCESSIN i;
-        SBCREATEPROCESSOUT o;
-    };
-} SBCREATEPROCESS, * PSBCREATEPROCESS;
-
-// private
-typedef struct _SBAPIMSG
-{
-    PORT_MESSAGE h;
-    union
-    {
-        SBCONNECTINFO ConnectionRequest;
-        struct
-        {
-            SBAPINUMBER ApiNumber;
-            NTSTATUS ReturnedStatus;
-            union
-            {
-                SBCREATESESSION CreateSession;
-                SBTERMINATESESSION TerminateSession;
-                SBFOREIGNSESSIONCOMPLETE ForeignSessionComplete;
-                SBCREATEPROCESS CreateProcessA;
-            };
-        };
-    } u;
-} SBAPIMSG, * PSBAPIMSG;
-
-NTSYSAPI
-NTSTATUS
-NTAPI
-RtlConnectToSm(
-    _In_opt_ PCUNICODE_STRING ApiPortName,
-    _In_opt_ HANDLE ApiPortHandle,
-    _In_ ULONG ProcessImageType,
-    _Out_ PHANDLE SmssConnection
-);
-
-NTSYSAPI
-NTSTATUS
-NTAPI
-RtlSendMsgToSm(
-    _In_ HANDLE ApiPortHandle,
-    _Inout_updates_(MessageData->u1.s1.TotalLength) PPORT_MESSAGE MessageData
-);
-#endif
-
-//
 // Appcontainer
 //
 
@@ -13619,7 +13593,7 @@ NTSTATUS
 NTAPI
 RtlFlsSetValue(
     _In_ ULONG FlsIndex,
-    _In_ PVOID FlsData
+    _In_opt_ PVOID FlsData
 );
 #endif
 
@@ -13631,6 +13605,34 @@ RtlFlsGetValue2(
     _In_ ULONG FlsIndex
 );
 #endif
+
+
+#if (NTDDI_VERSION >= NTDDI_WIN11)
+// rev
+NTSYSAPI
+NTSTATUS
+NTAPI
+RtlTlsAlloc(
+    _Out_ PULONG TlsIndex
+);
+
+// rev
+NTSYSAPI
+NTSTATUS
+NTAPI
+RtlTlsFree(
+    _In_ ULONG TlsIndex
+);
+
+// rev
+NTSYSAPI
+NTSTATUS
+NTAPI
+RtlTlsSetValue(
+    _In_ ULONG TlsIndex,
+    _In_opt_ PVOID TlsData
+);
+#endif // PHNT_VERSION >= PHNT_WINDOWS_11
 
 //
 // File System
@@ -13958,6 +13960,7 @@ typedef enum _RTL_BSD_ITEM_TYPE
     RtlBsdItemMax
 } RTL_BSD_ITEM_TYPE;
 
+#define BOOT_STATUS_FIELD_MAX RtlBsdItemMax
 
 // ros
 typedef struct _RTL_BSD_DATA_POWER_TRANSITION
@@ -14234,10 +14237,78 @@ typedef struct _RTL_FEATURE_CONFIGURATION
 } RTL_FEATURE_CONFIGURATION, * PRTL_FEATURE_CONFIGURATION;
 
 // private
+typedef struct _RTL_FEATURE_CONFIGURATION_INTERNAL
+{
+    ULONG FeatureId;
+    union
+    {
+        struct
+        {
+            ULONG Priority : 4;
+            ULONG EnabledState : 2;
+            ULONG IsWexpConfiguration : 1;
+            ULONG HasSubscriptions : 1;
+            ULONG Variant : 6;
+            ULONG VariantPayloadKind : 2;
+            ULONG Reserved : 16;
+        };
+        ULONG Flags;
+    };
+    ULONG VariantPayload;
+    union
+    {
+        struct
+        {
+            ULONG ChangeTimeUpgrade : 1;
+            ULONG HasGroupBypass : 1;
+            ULONG Reserved2 : 30;
+        };
+        ULONG Flags2;
+    };
+} RTL_FEATURE_CONFIGURATION_INTERNAL, * PRTL_FEATURE_CONFIGURATION_INTERNAL;
+
+// private
+typedef struct _SYSTEM_FEATURE_CONFIGURATION_SECTIONS_INFORMATION_ENTRY
+{
+    RTL_FEATURE_CHANGE_STAMP ChangeStamp;
+    HANDLE SectionHandle;
+    SIZE_T Size;
+} SYSTEM_FEATURE_CONFIGURATION_SECTIONS_INFORMATION_ENTRY, * PSYSTEM_FEATURE_CONFIGURATION_SECTIONS_INFORMATION_ENTRY;
+
+// private
+typedef enum _SYSTEM_FEATURE_CONFIGURATION_SECTION_TYPE
+{
+    SystemFeatureConfigurationSectionTypeBoot = 0,
+    SystemFeatureConfigurationSectionTypeRuntime = 1,
+    SystemFeatureConfigurationSectionTypeUsageTriggers = 2,
+    SystemFeatureConfigurationSectionTypeGoverned = 3,
+    SystemFeatureConfigurationSectionTypeCount
+} SYSTEM_FEATURE_CONFIGURATION_SECTION_TYPE;
+
+// private
+typedef struct _SYSTEM_FEATURE_CONFIGURATION_SECTIONS_REQUEST
+{
+    RTL_FEATURE_CHANGE_STAMP PreviousChangeStamps[SystemFeatureConfigurationSectionTypeCount];
+} SYSTEM_FEATURE_CONFIGURATION_SECTIONS_REQUEST, * PSYSTEM_FEATURE_CONFIGURATION_SECTIONS_REQUEST;
+
+// private
+typedef struct _SYSTEM_FEATURE_CONFIGURATION_SECTIONS_INFORMATION
+{
+    RTL_FEATURE_CHANGE_STAMP OverallChangeStamp;
+    SYSTEM_FEATURE_CONFIGURATION_SECTIONS_INFORMATION_ENTRY Descriptors[SystemFeatureConfigurationSectionTypeCount];
+} SYSTEM_FEATURE_CONFIGURATION_SECTIONS_INFORMATION, * PSYSTEM_FEATURE_CONFIGURATION_SECTIONS_INFORMATION;
+
+//typedef struct _SYSTEM_FEATURE_USAGE_SUBSCRIPTION_UPDATE
+//{
+//    ULONG UpdateCount;
+//    _Field_size_(UpdateCount) SYSTEM_FEATURE_USAGE_SUBSCRIPTION_UPDATE_ENTRY Updates[ANYSIZE_ARRAY];
+//} SYSTEM_FEATURE_USAGE_SUBSCRIPTION_UPDATE, *PSYSTEM_FEATURE_USAGE_SUBSCRIPTION_UPDATE;
+
+// private
 typedef struct _RTL_FEATURE_CONFIGURATION_TABLE
 {
     ULONG FeatureCount;
-    _Field_size_(FeatureCount) RTL_FEATURE_CONFIGURATION Features[ANYSIZE_ARRAY];
+    _Field_size_(FeatureCount) RTL_FEATURE_CONFIGURATION_INTERNAL Features[ANYSIZE_ARRAY];
 } RTL_FEATURE_CONFIGURATION_TABLE, * PRTL_FEATURE_CONFIGURATION_TABLE;
 
 // private
@@ -14302,7 +14373,19 @@ typedef struct _RTL_FEATURE_CONFIGURATION_UPDATE
     RTL_FEATURE_CONFIGURATION_PRIORITY Priority;
     RTL_FEATURE_ENABLED_STATE EnabledState;
     RTL_FEATURE_ENABLED_STATE_OPTIONS EnabledStateOptions;
-    RTL_FEATURE_VARIANT Variant;
+
+    union
+    {
+        ULONG VariantFlags;
+        struct
+        {
+            ULONG Variant : 8;
+            ULONG ChangeTimeUpgrade : 1;
+            ULONG HasGroupBypass : 1;
+            ULONG ReservedFlags : 22;
+        } DUMMYSTRUCTNAME;
+    } DUMMYUNIONNAME;
+
     UCHAR Reserved[3];
     RTL_FEATURE_VARIANT_PAYLOAD_KIND VariantPayloadKind;
     RTL_FEATURE_VARIANT_PAYLOAD VariantPayload;
@@ -14316,11 +14399,20 @@ typedef struct _RTL_FEATURE_USAGE_SUBSCRIPTION_TARGET
 } RTL_FEATURE_USAGE_SUBSCRIPTION_TARGET, * PRTL_FEATURE_USAGE_SUBSCRIPTION_TARGET;
 
 // private
+typedef struct _SYSTEM_FEATURE_USAGE_SUBSCRIPTION_DETAILS
+{
+    RTL_FEATURE_ID FeatureId;
+    USHORT ReportingKind;
+    USHORT ReportingOptions;
+    RTL_FEATURE_USAGE_SUBSCRIPTION_TARGET ReportingTarget;
+} SYSTEM_FEATURE_USAGE_SUBSCRIPTION_DETAILS, * PSYSTEM_FEATURE_USAGE_SUBSCRIPTION_DETAILS;
+
+// private
 typedef struct _RTL_FEATURE_USAGE_DATA
 {
     RTL_FEATURE_ID FeatureId;
     USHORT ReportingKind;
-    USHORT Reserved;
+    USHORT UsageCount;
 } RTL_FEATURE_USAGE_DATA, * PRTL_FEATURE_USAGE_DATA;
 
 // private
@@ -14338,6 +14430,13 @@ typedef struct _RTL_FEATURE_USAGE_SUBSCRIPTION_TABLE
     ULONG SubscriptionCount;
     _Field_size_(SubscriptionCount) RTL_FEATURE_USAGE_SUBSCRIPTION_DETAILS Subscriptions[ANYSIZE_ARRAY];
 } RTL_FEATURE_USAGE_SUBSCRIPTION_TABLE, * PRTL_FEATURE_USAGE_SUBSCRIPTION_TABLE;
+
+// private
+typedef struct _SYSTEM_FEATURE_USAGE_SUBSCRIPTION_UPDATE_ENTRY
+{
+    ULONG Remove;
+    RTL_FEATURE_USAGE_SUBSCRIPTION_DETAILS Details;
+} SYSTEM_FEATURE_USAGE_SUBSCRIPTION_UPDATE_ENTRY, * PSYSTEM_FEATURE_USAGE_SUBSCRIPTION_UPDATE_ENTRY;
 
 // private
 _Function_class_(RTL_FEATURE_CONFIGURATION_CHANGE_CALLBACK)
@@ -14392,59 +14491,7 @@ typedef struct _SYSTEM_FEATURE_CONFIGURATION_UPDATE
     };
 } SYSTEM_FEATURE_CONFIGURATION_UPDATE, * PSYSTEM_FEATURE_CONFIGURATION_UPDATE;
 
-// private
-typedef struct _SYSTEM_FEATURE_CONFIGURATION_SECTIONS_INFORMATION_ENTRY
-{
-    RTL_FEATURE_CHANGE_STAMP ChangeStamp;
-    PVOID Section;
-    SIZE_T Size;
-} SYSTEM_FEATURE_CONFIGURATION_SECTIONS_INFORMATION_ENTRY, * PSYSTEM_FEATURE_CONFIGURATION_SECTIONS_INFORMATION_ENTRY;
-
-// private
-typedef enum _SYSTEM_FEATURE_CONFIGURATION_SECTION_TYPE
-{
-    SystemFeatureConfigurationSectionTypeBoot = 0,
-    SystemFeatureConfigurationSectionTypeRuntime = 1,
-    SystemFeatureConfigurationSectionTypeUsageTriggers = 2,
-    SystemFeatureConfigurationSectionTypeCount = 3,
-} SYSTEM_FEATURE_CONFIGURATION_SECTION_TYPE;
-
-// private
-typedef struct _SYSTEM_FEATURE_CONFIGURATION_SECTIONS_REQUEST
-{
-    RTL_FEATURE_CHANGE_STAMP PreviousChangeStamps[SystemFeatureConfigurationSectionTypeCount];
-} SYSTEM_FEATURE_CONFIGURATION_SECTIONS_REQUEST, * PSYSTEM_FEATURE_CONFIGURATION_SECTIONS_REQUEST;
-
-// private
-typedef struct _SYSTEM_FEATURE_CONFIGURATION_SECTIONS_INFORMATION
-{
-    RTL_FEATURE_CHANGE_STAMP OverallChangeStamp;
-    SYSTEM_FEATURE_CONFIGURATION_SECTIONS_INFORMATION_ENTRY Descriptors[SystemFeatureConfigurationSectionTypeCount];
-} SYSTEM_FEATURE_CONFIGURATION_SECTIONS_INFORMATION, * PSYSTEM_FEATURE_CONFIGURATION_SECTIONS_INFORMATION;
-
-// private
-typedef struct _SYSTEM_FEATURE_USAGE_SUBSCRIPTION_DETAILS
-{
-    RTL_FEATURE_ID FeatureId;
-    USHORT ReportingKind;
-    USHORT ReportingOptions;
-    RTL_FEATURE_USAGE_SUBSCRIPTION_TARGET ReportingTarget;
-} SYSTEM_FEATURE_USAGE_SUBSCRIPTION_DETAILS, * PSYSTEM_FEATURE_USAGE_SUBSCRIPTION_DETAILS;
-
-typedef struct _SYSTEM_FEATURE_USAGE_SUBSCRIPTION_UPDATE_ENTRY
-{
-    ULONG Remove;
-    RTL_FEATURE_USAGE_SUBSCRIPTION_DETAILS Details;
-} SYSTEM_FEATURE_USAGE_SUBSCRIPTION_UPDATE_ENTRY, * PSYSTEM_FEATURE_USAGE_SUBSCRIPTION_UPDATE_ENTRY;
-
-typedef struct _SYSTEM_FEATURE_USAGE_SUBSCRIPTION_UPDATE
-{
-    ULONG UpdateCount;
-    _Field_size_(UpdateCount) SYSTEM_FEATURE_USAGE_SUBSCRIPTION_UPDATE_ENTRY Updates[ANYSIZE_ARRAY];
-} SYSTEM_FEATURE_USAGE_SUBSCRIPTION_UPDATE, * PSYSTEM_FEATURE_USAGE_SUBSCRIPTION_UPDATE;
-
 #if (NTDDI_VERSION >= NTDDI_WIN10_VB)
-
 // private
 NTSYSAPI
 NTSTATUS
@@ -14482,6 +14529,29 @@ NTSYSAPI
 NTSTATUS
 NTAPI
 RtlQueryAllFeatureConfigurations(
+    _In_ RTL_FEATURE_CONFIGURATION_TYPE ConfigurationType,
+    _Out_opt_ PRTL_FEATURE_CHANGE_STAMP ChangeStamp,
+    _Out_writes_(*ConfigurationCount) PRTL_FEATURE_CONFIGURATION Configurations,
+    _Inout_ PSIZE_T ConfigurationCount
+);
+
+// private
+NTSYSAPI
+NTSTATUS
+NTAPI
+RtlQueryAllInternalFeatureConfigurations(
+    _In_ RTL_FEATURE_CONFIGURATION_TYPE ConfigurationType,
+    _Out_opt_ PRTL_FEATURE_CHANGE_STAMP ChangeStamp,
+    _Out_writes_(*ConfigurationCount) PRTL_FEATURE_CONFIGURATION Configurations,
+    _Inout_ PSIZE_T ConfigurationCount
+);
+
+// private
+NTSYSAPI
+NTSTATUS
+NTAPI
+RtlQueryAllInternalRuntimeFeatureConfigurations(
+    _In_ RTL_FEATURE_ID FeatureId,
     _In_ RTL_FEATURE_CONFIGURATION_TYPE ConfigurationType,
     _Out_opt_ PRTL_FEATURE_CHANGE_STAMP ChangeStamp,
     _Out_writes_(*ConfigurationCount) PRTL_FEATURE_CONFIGURATION Configurations,

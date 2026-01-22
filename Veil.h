@@ -320,6 +320,7 @@ struct IUnknown;
 #include "Veil/Veil.System.KernelCore.h"
 #include "Veil/Veil.System.MemoryManager.h"
 #include "Veil/Veil.System.ObjectManager.h"
+#include "Veil/Veil.System.SxS.h"
 #include "Veil/Veil.System.Loader.h"
 #include "Veil/Veil.System.Executive.h"
 #include "Veil/Veil.System.Process.h"
@@ -345,5 +346,9 @@ struct IUnknown;
 #include "Veil/Veil.System.WindowStation.h"
 #include "Veil/Veil.System.UserManagerService.h"
 #include "Veil/Veil.System.ThreadPool.h"
+#include "Veil/Veil.System.BCD.h"
+#include "Veil/Veil.System.D3DKMT.h"
+#include "Veil/Veil.System.SAM.h"
+#include "Veil/Veil.System.SMSS.h"
 
 #endif // _VEIL_

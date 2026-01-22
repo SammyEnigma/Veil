@@ -1,4 +1,4 @@
- /*
+﻿ /*
  * PROJECT:   Veil
  * FILE:      Veil.System.ConfigurationManager.h
  * PURPOSE:   This file is part of Veil.
@@ -496,6 +496,7 @@ typedef enum _REG_ACTION
     KeyModified
 } REG_ACTION;
 
+_Struct_size_bytes_(NextEntryOffset)
 typedef struct _REG_NOTIFY_INFORMATION
 {
     ULONG NextEntryOffset;

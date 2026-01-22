@@ -1,4 +1,4 @@
-/*
+﻿/*
  * PROJECT:   Veil
  * FILE:      Veil.System.ALPC.h
  * PURPOSE:   This file is part of Veil.
@@ -26,8 +26,16 @@
 
 VEIL_BEGIN()
 
+//
+// ALPC Object Specific Access Rights
+//
+
 #define PORT_CONNECT    0x0001
 #define PORT_ALL_ACCESS (STANDARD_RIGHTS_REQUIRED | SYNCHRONIZE | 0x1)
+
+//
+// ALPC information structures
+//
 
 typedef struct _PORT_MESSAGE
 {
@@ -88,6 +96,17 @@ typedef struct _PORT_DATA_INFORMATION
 #define LPC_CONTINUATION_REQUIRED 0x2000
 #define LPC_NO_IMPERSONATE        0x4000
 #define LPC_KERNELMODE_MESSAGE    0x8000
+
+#define ALPC_REQUEST                (LPC_CONTINUATION_REQUIRED | LPC_REQUEST)
+#define ALPC_REPLY                  (LPC_CONTINUATION_REQUIRED | LPC_REPLY)
+#define ALPC_DATAGRAM               (LPC_CONTINUATION_REQUIRED | LPC_DATAGRAM)
+#define ALPC_LOST_REPLY             (LPC_CONTINUATION_REQUIRED | LPC_LOST_REPLY)
+#define ALPC_PORT_CLOSED            (LPC_CONTINUATION_REQUIRED | LPC_PORT_CLOSED)
+#define ALPC_CLIENT_DIED            (LPC_CONTINUATION_REQUIRED | LPC_CLIENT_DIED)
+#define ALPC_EXCEPTION              (LPC_CONTINUATION_REQUIRED | LPC_EXCEPTION)
+#define ALPC_DEBUG_EVENT            (LPC_CONTINUATION_REQUIRED | LPC_DEBUG_EVENT)
+#define ALPC_ERROR_EVENT            (LPC_CONTINUATION_REQUIRED | LPC_ERROR_EVENT)
+#define ALPC_CONNECTION_REQUEST     (LPC_CONTINUATION_REQUIRED | LPC_CONNECTION_REQUEST)
 
 #define PORT_VALID_OBJECT_ATTRIBUTES OBJ_CASE_INSENSITIVE
 
@@ -583,9 +602,38 @@ ZwQueryInformationPort(
 // rev
 typedef HANDLE ALPC_HANDLE, * PALPC_HANDLE;
 
-#define ALPC_PORFLG_ALLOW_LPC_REQUESTS  0x20000 // rev
-#define ALPC_PORFLG_WAITABLE_PORT       0x40000 // dbg
-#define ALPC_PORFLG_SYSTEM_PROCESS      0x100000 // dbg
+#define ALPC_PORFLG_NONE                           0x00000000
+#define ALPC_PORFLG_LPC_MODE                       0x00001000 // kernel only
+#define ALPC_PORFLG_ALLOW_IMPERSONATION            0x00010000
+#define ALPC_PORFLG_ALLOW_LPC_REQUESTS             0x00020000 // rev
+#define ALPC_PORFLG_WAITABLE_PORT                  0x00040000 // dbg
+#define ALPC_PORFLG_ALLOW_DUP_OBJECT               0x00080000
+#define ALPC_PORFLG_SYSTEM_PROCESS                 0x00100000 // dbg
+#define ALPC_PORFLG_WAKE_POLICY1                   0x00200000
+#define ALPC_PORFLG_WAKE_POLICY2                   0x00400000
+#define ALPC_PORFLG_WAKE_POLICY3                   0x00800000
+#define ALPC_PORFLG_DIRECT_MESSAGE                 0x01000000
+#define ALPC_PORFLG_ALLOW_MULTIHANDLE_ATTRIBUTE    0x02000000
+
+#define ALPC_PORFLG_OBJECT_TYPE_FILE        0x0001
+#define ALPC_PORFLG_OBJECT_TYPE_INVALID     0x0002
+#define ALPC_PORFLG_OBJECT_TYPE_THREAD      0x0004
+#define ALPC_PORFLG_OBJECT_TYPE_SEMAPHORE   0x0008
+#define ALPC_PORFLG_OBJECT_TYPE_EVENT       0x0010
+#define ALPC_PORFLG_OBJECT_TYPE_PROCESS     0x0020
+#define ALPC_PORFLG_OBJECT_TYPE_MUTEX       0x0040
+#define ALPC_PORFLG_OBJECT_TYPE_SECTION     0x0080
+#define ALPC_PORFLG_OBJECT_TYPE_REGKEY      0x0100
+#define ALPC_PORFLG_OBJECT_TYPE_TOKEN       0x0200
+#define ALPC_PORFLG_OBJECT_TYPE_COMPOSITION 0x0400
+#define ALPC_PORFLG_OBJECT_TYPE_JOB         0x0800
+#define ALPC_PORFLG_OBJECT_TYPE_ALL \
+    (ALPC_PORFLG_OBJECT_TYPE_FILE | ALPC_PORFLG_OBJECT_TYPE_THREAD | \
+     ALPC_PORFLG_OBJECT_TYPE_SEMAPHORE | ALPC_PORFLG_OBJECT_TYPE_EVENT | \
+     ALPC_PORFLG_OBJECT_TYPE_PROCESS | ALPC_PORFLG_OBJECT_TYPE_MUTEX | \
+     ALPC_PORFLG_OBJECT_TYPE_SECTION | ALPC_PORFLG_OBJECT_TYPE_REGKEY | \
+     ALPC_PORFLG_OBJECT_TYPE_TOKEN | ALPC_PORFLG_OBJECT_TYPE_COMPOSITION | \
+     ALPC_PORFLG_OBJECT_TYPE_JOB
 
 // symbols
 typedef struct _ALPC_PORT_ATTRIBUTES
@@ -609,6 +657,13 @@ typedef struct _ALPC_PORT_ATTRIBUTES
 #define ALPC_MESSAGE_CONTEXT_ATTRIBUTE  0x20000000
 #define ALPC_MESSAGE_VIEW_ATTRIBUTE     0x40000000
 #define ALPC_MESSAGE_SECURITY_ATTRIBUTE 0x80000000
+
+// Convenience macro for all message attributes
+#define ALPC_MESSAGE_ATTRIBUTES_ALL \
+    (ALPC_MESSAGE_HANDLE_ATTRIBUTE | \
+     ALPC_MESSAGE_CONTEXT_ATTRIBUTE | \
+     ALPC_MESSAGE_VIEW_ATTRIBUTE | \
+     ALPC_MESSAGE_SECURITY_ATTRIBUTE)
 // end_rev
 
 // symbols
@@ -965,7 +1020,7 @@ NtAlpcCreateResourceReserve(
     _In_ HANDLE PortHandle,
     _Reserved_ ULONG Flags,
     _In_ SIZE_T MessageSize,
-    _Out_ PALPC_HANDLE ResourceId
+    _Out_ PULONG ResourceId
 );
 
 _IRQL_requires_max_(PASSIVE_LEVEL)
@@ -976,7 +1031,7 @@ ZwAlpcCreateResourceReserve(
     _In_ HANDLE PortHandle,
     _Reserved_ ULONG Flags,
     _In_ SIZE_T MessageSize,
-    _Out_ PALPC_HANDLE ResourceId
+    _Out_ PULONG ResourceId
 );
 
 __kernel_entry NTSYSCALLAPI
@@ -985,7 +1040,7 @@ NTAPI
 NtAlpcDeleteResourceReserve(
     _In_ HANDLE PortHandle,
     _Reserved_ ULONG Flags,
-    _In_ ALPC_HANDLE ResourceId
+    _In_ ULONG ResourceId
 );
 
 _IRQL_requires_max_(PASSIVE_LEVEL)
@@ -995,7 +1050,7 @@ NTAPI
 ZwAlpcDeleteResourceReserve(
     _In_ HANDLE PortHandle,
     _Reserved_ ULONG Flags,
-    _In_ ALPC_HANDLE ResourceId
+    _In_ ULONG ResourceId
 );
 
 __kernel_entry NTSYSCALLAPI
@@ -1384,9 +1439,10 @@ AlpcMaxAllowedMessageLength(
     VOID
 );
 
-#define ALPC_ATTRFLG_ALLOCATEDATTR   0x20000000
-#define ALPC_ATTRFLG_VALIDATTR       0x40000000
-#define ALPC_ATTRFLG_KEEPRUNNINGATTR 0x60000000
+// ALPC message attribute flags (internal state)
+#define ALPC_ATTRFLG_ALLOCATEDATTR   0x20000000  // Attribute buffer was allocated
+#define ALPC_ATTRFLG_VALIDATTR       0x40000000  // Attribute buffer is valid
+#define ALPC_ATTRFLG_KEEPRUNNINGATTR 0x60000000  // Keep running attribute
 
 NTSYSAPI
 ULONG

@@ -34,10 +34,11 @@ VEIL_BEGIN()
  * The NtDelayExecution routine suspends the current thread until the specified condition is met.
  *
  * \param Alertable The function returns when either the time-out period has elapsed or when the APC function is called.
- * \param DelayInterval The time interval for which execution is to be suspended, in milliseconds.
+ * \param DelayInterval A pointer to the time interval for which execution is to be suspended, in units of 100 nanoseconds.
+ * - A negative value specifies an interval relative to the current time.
+ * - A positive value specifies an absolute time, measured in 100-nanosecond intervals since January 1, 1601 (UTC).
  * - A value of zero causes the thread to relinquish the remainder of its time slice to any other thread that is ready to run.
  * - If there are no other threads ready to run, the function returns immediately, and the thread continues execution.
- * - A value of INFINITE indicates that the suspension should not time out.
  * \return NTSTATUS Successful or errant status. The return value is STATUS_USER_APC when Alertable is TRUE, and the function returned due to one or more I/O completion callback functions.
  * \remarks Note that a ready thread is not guaranteed to run immediately. Consequently, the thread will not run until some arbitrary time after the sleep interval elapses,
  * based upon the system "tick" frequency and the load factor from other processes.
@@ -1658,15 +1659,20 @@ NtCreateTimer(
     _In_ TIMER_TYPE TimerType
 );
 
+// The WDK supplies the Zw timer declarations in kernel mode with authoritative import and SAL metadata.
+#ifndef _KERNEL_MODE
 _IRQL_requires_max_(PASSIVE_LEVEL)
 _When_(return = 0, __drv_allocatesMem(TimerObject))
+NTSYSAPI
 NTSTATUS
+NTAPI
 ZwCreateTimer(
     _Out_ PHANDLE TimerHandle,
     _In_ ACCESS_MASK DesiredAccess,
     _In_opt_ POBJECT_ATTRIBUTES ObjectAttributes,
     _In_ TIMER_TYPE TimerType
 );
+#endif // !_KERNEL_MODE
 
 /**
  * The NtOpenTimer routine opens a handle to an existing timer object.
@@ -1685,13 +1691,17 @@ NtOpenTimer(
     _In_ POBJECT_ATTRIBUTES ObjectAttributes
 );
 
+#ifndef _KERNEL_MODE
 _IRQL_requires_max_(PASSIVE_LEVEL)
+NTSYSAPI
 NTSTATUS
+NTAPI
 ZwOpenTimer(
     _Out_ PHANDLE TimerHandle,
     _In_ ACCESS_MASK DesiredAccess,
     _In_ POBJECT_ATTRIBUTES ObjectAttributes
 );
+#endif // !_KERNEL_MODE
 
 /**
  * The NtSetTimer routine sets a timer object to the signaled state after a specified interval.
@@ -1718,8 +1728,11 @@ NtSetTimer(
     _Out_opt_ PBOOLEAN PreviousState
 );
 
+#ifndef _KERNEL_MODE
 _IRQL_requires_max_(PASSIVE_LEVEL)
+NTSYSAPI
 NTSTATUS
+NTAPI
 ZwSetTimer(
     _In_ HANDLE TimerHandle,
     _In_ PLARGE_INTEGER DueTime,
@@ -1729,6 +1742,7 @@ ZwSetTimer(
     _In_opt_ LONG Period,
     _Out_opt_ PBOOLEAN PreviousState
 );
+#endif // !_KERNEL_MODE
 
 /**
  * The NtSetTimerEx routine sets extended information for a timer object.
@@ -1749,14 +1763,18 @@ NtSetTimerEx(
     _In_ ULONG TimerSetInformationLength
 );
 
+#ifndef _KERNEL_MODE
 _IRQL_requires_max_(PASSIVE_LEVEL)
+NTSYSAPI
 NTSTATUS
+NTAPI
 ZwSetTimerEx(
     _In_ HANDLE TimerHandle,
     _In_ TIMER_SET_INFORMATION_CLASS TimerSetInformationClass,
     _Inout_updates_bytes_opt_(TimerSetInformationLength) PVOID TimerSetInformation,
     _In_ ULONG TimerSetInformationLength
 );
+#endif // !_KERNEL_MODE
 
 /**
  * The NtCancelTimer routine Cancels a timer object.
@@ -1773,12 +1791,16 @@ NtCancelTimer(
     _Out_opt_ PBOOLEAN CurrentState
 );
 
+#ifndef _KERNEL_MODE
 _IRQL_requires_max_(PASSIVE_LEVEL)
+NTSYSAPI
 NTSTATUS
+NTAPI
 ZwCancelTimer(
     _In_ HANDLE TimerHandle,
     _Out_opt_ PBOOLEAN CurrentState
 );
+#endif // !_KERNEL_MODE
 
 /**
  * The NtQueryTimer routine retrieves information about a timer object.
@@ -3517,8 +3539,8 @@ typedef enum _SYSTEM_INFORMATION_CLASS
     SystemWin32WerStartCallout,                             // s:
     SystemSecureKernelProfileInformation,                   // q: SYSTEM_SECURE_KERNEL_HYPERGUARD_PROFILE_INFORMATION
     SystemCodeIntegrityPlatformManifestInformation,         // q: SYSTEM_SECUREBOOT_PLATFORM_MANIFEST_INFORMATION // NtQuerySystemInformationEx // since REDSTONE
-    SystemInterruptSteeringInformation,                     // q: in: SYSTEM_INTERRUPT_STEERING_INFORMATION_INPUT, out: SYSTEM_INTERRUPT_STEERING_INFORMATION_OUTPUT // NtQuerySystemInformationEx
-    SystemSupportedProcessorArchitectures,                  // p: in opt: HANDLE, out: SYSTEM_SUPPORTED_PROCESSOR_ARCHITECTURES_INFORMATION[] // NtQuerySystemInformationEx // 180
+    SystemInterruptSteeringInformation,                     // q: in: SYSTEM_INTERRUPT_STEERING_INFORMATION_INPUT, out: SYSTEM_INTERRUPT_STEERING_INFORMATION_OUTPUT // NtQuerySystemInformationEx // 180
+    SystemSupportedProcessorArchitectures,                  // p: in opt: HANDLE, out: SYSTEM_SUPPORTED_PROCESSOR_ARCHITECTURES_INFORMATION[] // NtQuerySystemInformationEx
     SystemMemoryUsageInformation,                           // q: SYSTEM_MEMORY_USAGE_INFORMATION
     SystemCodeIntegrityCertificateInformation,              // q: SYSTEM_CODEINTEGRITY_CERTIFICATE_INFORMATION
     SystemPhysicalMemoryInformation,                        // q: SYSTEM_PHYSICAL_MEMORY_INFORMATION // since REDSTONE2
@@ -3561,8 +3583,8 @@ typedef enum _SYSTEM_INFORMATION_CLASS
     SystemShadowStackInformation,                           // q: SYSTEM_SHADOW_STACK_INFORMATION
     SystemBuildVersionInformation,                          // q: in: ULONG (LayerNumber), out: SYSTEM_BUILD_VERSION_INFORMATION // NtQuerySystemInformationEx
     SystemPoolLimitInformation,                             // q: SYSTEM_POOL_LIMIT_INFORMATION (requires SeIncreaseQuotaPrivilege) // NtQuerySystemInformationEx
-    SystemCodeIntegrityAddDynamicStore,                     // q: CodeIntegrity-AllowConfigurablePolicy-CustomKernelSigners
-    SystemCodeIntegrityClearDynamicStores,                  // q: CodeIntegrity-AllowConfigurablePolicy-CustomKernelSigners
+    SystemCodeIntegrityAddDynamicStore,                     // q: SYSTEM_CODE_INTEGRITY_DYNAMIC_STORE // CodeIntegrity-AllowConfigurablePolicy-CustomKernelSigners
+    SystemCodeIntegrityClearDynamicStores,                  // q: SYSTEM_CODE_INTEGRITY_DYNAMIC_STORE // CodeIntegrity-AllowConfigurablePolicy-CustomKernelSigners
     SystemDifPoolTrackingInformation,                       // s: SYSTEM_DIF_POOL_TRACKING_INFORMATION (requires SeDebugPrivilege)
     SystemPoolZeroingInformation,                           // q: SYSTEM_POOL_ZEROING_INFORMATION
     SystemDpcWatchdogInformation,                           // qs: SYSTEM_DPC_WATCHDOG_CONFIGURATION_INFORMATION
@@ -3578,8 +3600,8 @@ typedef enum _SYSTEM_INFORMATION_CLASS
     SystemOriginalImageFeatureInformation,                  // q: in: SYSTEM_ORIGINAL_IMAGE_FEATURE_INFORMATION_INPUT, out: SYSTEM_ORIGINAL_IMAGE_FEATURE_INFORMATION_OUTPUT // NtQuerySystemInformationEx
     SystemMemoryNumaInformation,                            // q: SYSTEM_MEMORY_NUMA_INFORMATION_INPUT, SYSTEM_MEMORY_NUMA_INFORMATION_OUTPUT // NtQuerySystemInformationEx
     SystemMemoryNumaPerformanceInformation,                 // q: SYSTEM_MEMORY_NUMA_PERFORMANCE_INFORMATION_INPUT, SYSTEM_MEMORY_NUMA_PERFORMANCE_INFORMATION_OUTPUT // since 24H2 // 240
-    SystemCodeIntegritySignedPoliciesFullInformation,       // qs: NtQuerySystemInformationEx
-    SystemSecureCoreInformation,                            // qs: SystemSecureSecretsInformation
+    SystemCodeIntegritySignedPoliciesFullInformation,       // qs: SYSTEM_CODE_INTEGRITY_SIGNED_POLICIES // NtQuerySystemInformationEx
+    SystemSecureCoreInformation,                            // qs: SYSTEM_SECURE_CORE_INFORMATION // SystemSecureSecretsInformation
     SystemTrustedAppsRuntimeInformation,                    // q: SYSTEM_TRUSTEDAPPS_RUNTIME_INFORMATION
     SystemBadPageInformationEx,                             // q: SYSTEM_BAD_PAGE_INFORMATION
     SystemResourceDeadlockTimeout,                          // q: ULONG
@@ -7906,6 +7928,15 @@ typedef struct _SYSTEM_POOL_LIMIT_INFORMATION
     SYSTEM_POOL_LIMIT_INFO LimitEntries[1];
 } SYSTEM_POOL_LIMIT_INFORMATION, * PSYSTEM_POOL_LIMIT_INFORMATION;
 
+// rev
+typedef struct _SYSTEM_CODE_INTEGRITY_DYNAMIC_STORE
+{
+    HANDLE StoreHandle;
+    ULONG StoreFlags;
+    PVOID StoreData;
+    SIZE_T StoreSize;
+} SYSTEM_CODE_INTEGRITY_DYNAMIC_STORE, * PSYSTEM_CODE_INTEGRITY_DYNAMIC_STORE;
+
 // private
 //typedef struct _SYSTEM_POOL_ZEROING_INFORMATION
 //{
@@ -8100,9 +8131,27 @@ typedef struct _SYSTEM_MEMORY_NUMA_PERFORMANCE_INFORMATION_OUTPUT
 typedef struct _SYSTEM_OSL_RAMDISK_ENTRY
 {
     ULONG BlockSize;
-    ULONG_PTR BaseAddress;
+    PVOID BaseAddress;
     SIZE_T Size;
 } SYSTEM_OSL_RAMDISK_ENTRY, * PSYSTEM_OSL_RAMDISK_ENTRY;
+
+// rev
+typedef struct _SYSTEM_CODE_INTEGRITY_SIGNED_POLICIES
+{
+    BOOLEAN EnabledPolicies;
+    ULONGLONG SignedPoliciesData;
+    ULONG PolicySize;
+    ULONG SignatureSize;
+    UCHAR SignatureBuffer[0x100];
+} SYSTEM_CODE_INTEGRITY_SIGNED_POLICIES, * PSYSTEM_CODE_INTEGRITY_SIGNED_POLICIES;
+
+// rev
+typedef struct _SYSTEM_SECURE_CORE_INFORMATION
+{
+    BOOLEAN IsSecureCore;
+    ULONGLONG SecureKernelRunning;
+    ULONGLONG VslFeatures;
+} SYSTEM_SECURE_CORE_INFORMATION, * PSYSTEM_SECURE_CORE_INFORMATION;
 
 /**
  * The SYSTEM_TRUSTEDAPPS_RUNTIME_INFORMATION structure describes runtime
@@ -9701,7 +9750,8 @@ NTAPI
 NtInitializeNlsFiles(
     _Out_ PVOID* BaseAddress,
     _Out_ PLCID DefaultLocaleId,
-    _Out_ PLARGE_INTEGER DefaultCasingTableSize
+    _Out_ PLARGE_INTEGER DefaultCasingTableSize,
+    _Out_opt_ PULONG CurrentNLSVersion
 );
 
 _IRQL_requires_max_(PASSIVE_LEVEL)
@@ -9711,7 +9761,8 @@ NTAPI
 ZwInitializeNlsFiles(
     _Out_ PVOID* BaseAddress,
     _Out_ PLCID DefaultLocaleId,
-    _Out_ PLARGE_INTEGER DefaultCasingTableSize
+    _Out_ PLARGE_INTEGER DefaultCasingTableSize,
+    _Out_opt_ PULONG CurrentNLSVersion
 );
 
 __kernel_entry NTSYSCALLAPI
@@ -10520,6 +10571,7 @@ NtManageHotPatch(
 );
 
 _IRQL_requires_max_(PASSIVE_LEVEL)
+NTSYSAPI
 NTSTATUS
 NTAPI
 ZwManageHotPatch(

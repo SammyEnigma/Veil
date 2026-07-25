@@ -58,6 +58,7 @@ NtVdmControl(
     _Inout_ PVOID ServiceData
 );
 
+_IRQL_requires_max_(PASSIVE_LEVEL)
 NTSYSAPI
 NTSTATUS
 NTAPI

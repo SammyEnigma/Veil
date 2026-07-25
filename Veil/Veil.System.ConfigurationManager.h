@@ -792,6 +792,7 @@ NtCreateKeyTransacted(
 _IRQL_requires_max_(PASSIVE_LEVEL)
 NTSYSAPI
 NTSTATUS
+NTAPI
 ZwCreateKeyTransacted(
     _Out_ PHANDLE KeyHandle,
     _In_ ACCESS_MASK DesiredAccess,
@@ -1967,9 +1968,11 @@ NtCreateRegistryTransaction(
     _Reserved_ ULONG CreateOptions
 );
 
+// The WDK supplies these Zw registry transaction declarations in kernel mode with authoritative syscall SAL metadata.
+#ifndef _KERNEL_MODE
 _Must_inspect_result_
 _IRQL_requires_max_(PASSIVE_LEVEL)
-__kernel_entry NTSYSCALLAPI
+NTSYSAPI
 NTSTATUS
 NTAPI
 ZwCreateRegistryTransaction(
@@ -1978,6 +1981,7 @@ ZwCreateRegistryTransaction(
     _In_opt_ POBJECT_ATTRIBUTES ObjectAttributes,
     _In_opt_ ULONG CreateOptions
 );
+#endif // !_KERNEL_MODE
 
 /**
  * Opens a registry transaction.
@@ -2023,14 +2027,16 @@ NtCommitRegistryTransaction(
     _Reserved_ ULONG Flags
 );
 
+#ifndef _KERNEL_MODE
 _IRQL_requires_max_(PASSIVE_LEVEL)
-__kernel_entry NTSYSCALLAPI
+NTSYSAPI
 NTSTATUS
 NTAPI
 ZwCommitRegistryTransaction(
     _In_ HANDLE TransactionHandle,
     _In_ ULONG Flags
 );
+#endif // !_KERNEL_MODE
 
 /**
  * Rolls back a registry transaction.

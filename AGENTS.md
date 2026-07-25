@@ -100,19 +100,88 @@
 
 ### Build & Test
 
-Execute `BuildAllTargets.cmd` in the `Veil.Test` directory.
+Run `Veil.Test\BuildAllTargets.cmd`. Successful verification requires process exit code 0.
 
 ---
 
-## Update Workflow
+## phnt Synchronization Policy
 
-The phnt synchronization procedure has been extracted into the `veil-update` skill.
-It triggers automatically when you mention updating Veil, syncing phnt, applying
-upstream changes, VERSION_COMMIT, or working with the systeminformer repository.
+The repository-local `veil-update` skill provides procedural guidance for phnt
+synchronization. It MUST comply with this policy. If skill instructions conflict
+with this section, this section takes precedence.
 
-To invoke it, simply ask to update Veil or sync from phnt — the skill will
-handle the full workflow: prepare sources, apply diffs, convert macros,
-format functions, generate Zw pairs, validate, and finalize.
+### Source Selection and Audit
+
+1. Read the old upstream commit from `VERSION_COMMIT`.
+2. Resolve the requested target commit, or the upstream default branch HEAD when
+   no target was requested, and pin it by full commit SHA.
+3. Fetch both commits and verify that the old commit is an ancestor of the new
+   commit. Stop when the ancestry check fails.
+4. Generate both a name-status inventory and the full diff for
+   `phnt/include/` between the two pinned commits.
+5. Record an explicit disposition for every changed upstream file and every
+   diff hunk: applied, already equivalent in Veil, retained for a documented
+   compatibility reason, or intentionally ignored with a documented reason.
+6. A new or unclassified header, symbol family, or version macro blocks
+   updating `VERSION_COMMIT`. Absence from the skill's mapping table is not
+   permission to skip a change.
+
+### Semantic Reconciliation
+
+- Reconcile additions, modifications, deletions, renames, and cross-file moves.
+  Do not apply a blanket preserve-existing-content rule.
+- Retain an upstream-removed declaration only when Veil requires it for a
+  documented compatibility contract.
+- Apply related changes as one Veil module or dependency unit. Upstream file
+  order does not define Veil declaration order.
+- Treat `ntmisc.h` as a multi-domain source. Classify its changed sections by
+  symbol ownership and report every section separately; do not restrict review
+  to Package APIs.
+
+### API Family Conversion
+
+- Native system calls use Veil's `__kernel_entry NTSYSCALLAPI` form.
+- Add a native `Zw*` declaration only when the corresponding entry is present
+  in upstream `ntzwapi.h` or an authoritative WDK declaration.
+- Win32k `NtUser*` and `NtGdi*` declarations use the applicable `W32KAPI` form
+  and do not receive synthesized `ZwUser*` or `ZwGdi*` declarations.
+- Ordinary native exports retain the applicable `NTSYSAPI` or other Veil export
+  form and do not receive an automatic Zw pair.
+- Preserve upstream ABI, parameter types, SAL annotations, and declaration
+  order unless an SDK or WDK compatibility adaptation is required and
+  documented.
+
+### Version Guard Conversion
+
+- Enumerate every `PHNT_VERSION` and `PHNT_WINDOWS_*` token present in the new
+  upstream commit and provide an explicit Veil conversion before applying the
+  diff.
+- Use `PHNT_WINDOWS_ANCIENT` rather than the obsolete
+  `PHNT_WINDOWS_OLDEST`; map it to Veil's supported minimum,
+  `NTDDI_WIN2K`.
+- Map `PHNT_WINDOWS_11_25H2` to `NTDDI_WIN11_DT` and
+  `PHNT_WINDOWS_11_26H1` to `NTDDI_WIN11_BR`.
+- Do not map `PHNT_WINDOWS_11_27H2` or a later release until `Veil.h` contains
+  an authoritative constant for that release.
+- Treat `PHNT_WINDOWS_NEW` as a sentinel. Do not blindly convert it to the
+  newest fixed `NTDDI_*` value.
+
+### Validation and Finalization
+
+1. Complete each coherent Veil module or dependency unit before an intermediate
+   build. Cross-file moves must not be validated as isolated half-applied
+   changes.
+2. Run `Veil.Test\BuildAllTargets.cmd` after all changes. The final process exit
+   code must be 0.
+3. Do not run a global `taskkill /f /im MSBuild.exe` as a normal pre-build
+   action. Terminate only a verified stale process that blocks this repository's
+   build.
+4. Update `VERSION_COMMIT` to the pinned new SHA only after final validation
+   succeeds.
+5. Remove only cache content created by the current synchronization. In the
+   standard procedure this is `.cache/systeminformer`; remove `.cache` itself
+   only when the current task created it and it is empty.
+6. Report `ntmisc.h` changes by classified section.
 
 ---
 
@@ -217,15 +286,21 @@ typedef struct _STRUCTURE_NAME
 
 ## Verification Checklist
 
-Before submitting changes, verify the following:
+Before submitting a phnt synchronization, verify the following:
 
-- [ ] All `PHNT_WINDOWS_*` macros converted to `NTDDI_*`
-- [ ] All `Nt*` functions have `__kernel_entry` attribute
-- [ ] All `Nt*` functions have corresponding `Zw*` pairs
-- [ ] Closing parentheses aligned correctly
-- [ ] No compilation errors in `BuildAllTargets.cmd`
-- [ ] Definition order respects dependencies
-- [ ] `ntmisc.h` changes reported separately
+- [ ] Old and new upstream commits are pinned by full SHA and ancestry is verified.
+- [ ] Every changed upstream file and diff hunk has an explicit disposition.
+- [ ] No new header, symbol family, or version macro remains unclassified.
+- [ ] Additions, modifications, deletions, renames, and cross-file moves are reconciled.
+- [ ] All `PHNT_VERSION` and `PHNT_WINDOWS_*` uses have explicit Veil conversions.
+- [ ] API annotations and export macros follow the applicable native, Win32k, or ordinary export family.
+- [ ] Native Nt/Zw coverage is verified against `ntzwapi.h` or authoritative WDK declarations.
+- [ ] Closing parentheses are aligned with no leading spaces before `);`.
+- [ ] `Veil.Test\BuildAllTargets.cmd` exits with code 0.
+- [ ] Definition order respects Veil dependencies.
+- [ ] Every changed `ntmisc.h` section is classified and reported separately.
+- [ ] `VERSION_COMMIT` contains the validated new upstream SHA.
+- [ ] Only cache content created by the current synchronization is removed.
 
 ---
 

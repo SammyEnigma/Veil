@@ -648,6 +648,7 @@ NtUserSetLayeredWindowAttributes(
 //
 
 #define GDI_MAX_HANDLE_COUNT 0xFFFF // 0x4000
+#define GDIK_MAX_HANDLE_COUNT 0x1000000 // GetMaxGdiHandleCount
 
 #define GDI_HANDLE_INDEX_SHIFT      0
 #define GDI_HANDLE_INDEX_BITS       16
@@ -763,6 +764,25 @@ typedef struct _GDI_SHARED_MEMORY
 {
     GDI_HANDLE_ENTRY Handles[GDI_MAX_HANDLE_COUNT];
 } GDI_SHARED_MEMORY, * PGDI_SHARED_MEMORY;
+
+FORCEINLINE
+BOOLEAN
+NTAPI
+IsPseudoWindowHandle(
+    _In_ HWND WindowHandle
+)
+{
+    ULONG_PTR value = (ULONG_PTR)WindowHandle;
+
+    if (value == 0xFFFF || // HWND_BROADCAST
+        value <= 1 || // NULL, HWND_TOP, HWND_BOTTOM
+        value >= (ULONG_PTR)-3) // HWND_MESSAGE, HWND_NOTOPMOST, HWND_TOPMOST
+    {
+        return TRUE;
+    }
+
+    return FALSE;
+}
 
 typedef enum _WINDOWINFOCLASS
 {
@@ -2457,6 +2477,31 @@ NtUserGetProp2(
     _In_ PCUNICODE_STRING String
 );
 
+// rev
+typedef struct _IAM_ACCESS_KEY_INPUT
+{
+    ULONG_PTR IamDesktopKey;
+} IAM_ACCESS_KEY_INPUT, * PIAM_ACCESS_KEY_INPUT;
+
+// rev
+_Success_(return != 0)
+__kernel_entry W32KAPI
+LOGICAL
+NTAPI
+NtUserAcquireIAMKey(
+    _Out_ PIAM_ACCESS_KEY_INPUT IamDesktopKey
+);
+
+// rev
+_Success_(return != 0)
+__kernel_entry W32KAPI
+LOGICAL
+NTAPI
+NtUserEnableIAMAccess(
+    _In_ const IAM_ACCESS_KEY_INPUT* AccessInput,
+    _In_ LOGICAL Enable
+);
+
 // rev // Valid bit masks enforced by NtUserSetProcessWin32Capabilities
 #define PROC_CAP_FLAGS1_VALID_MASK     0x00000007u    // bits 0-2
 #define PROC_CAP_FLAGS2_VALID_MASK     0x00000007u    // bits 0-2
@@ -2533,6 +2578,13 @@ GetWindowProcessHandle(
 __kernel_entry W32KAPI
 HANDLE
 NTAPI
+GetRealWindowOwner(
+    _In_ HWND WindowHandle
+);
+
+__kernel_entry W32KAPI
+HANDLE
+NTAPI
 NtUserGetWindowProcessHandle(
     _In_ HWND WindowHandle,
     _In_ ACCESS_MASK DesiredAccess
@@ -2558,15 +2610,129 @@ NtUserRegisterCloakedNotification(
     _In_ BOOL Register
 );
 
+#if (NTDDI_VERSION >= NTDDI_WIN11)
+typedef ULONG (NTAPI *PFNGETQUEUESTATUS)(
+    _In_ ULONG WakeMask
+);
+
+typedef LOGICAL (NTAPI *PFNINITMPH)(
+    _In_ ULONG MessagePumpHookFlags,
+    _In_opt_ PVOID Context
+);
+
+typedef LONG (NTAPI *PFNGETMESSAGE)(
+    _Out_ PMSG Message,
+    _In_opt_ HWND WindowHandle,
+    _In_ UINT FilterMin,
+    _In_ UINT FilterMax
+);
+
+typedef LONG (NTAPI *PFNWAITMESSAGEEX)(
+    _In_ ULONG WakeMask,
+    _In_ ULONG TimeoutMilliseconds
+);
+
+typedef ULONG (NTAPI *PFNMSGWAITFORMULTIPLEOBJECTSEX)(
+    _In_ ULONG Count,
+    _In_reads_opt_(Count) const HANDLE* Handles,
+    _In_ ULONG TimeoutMilliseconds,
+    _In_ ULONG WakeMask,
+    _In_ ULONG Flags
+);
+
+typedef struct _MESSAGEPUMPHOOK
+{
+    ULONG Size;
+    ULONG Reserved;
+    PFNGETMESSAGE GetMessageCallback;
+    PFNWAITMESSAGEEX WaitMessageExCallback;
+    PFNGETQUEUESTATUS GetQueueStatusCallback;
+    PFNMSGWAITFORMULTIPLEOBJECTSEX MsgWaitForMultipleObjectsExCallback;
+} MESSAGEPUMPHOOK, * PMESSAGEPUMPHOOK;
+
+typedef struct _MPH_STATE
+{
+    LONG LoadCount;
+    LONG MessagePumpHookEnabled;
+    PFNINITMPH InitializeMessagePumpHook;
+    MESSAGEPUMPHOOK MessagePumpHook;
+} MPH_STATE, * PMPH_STATE;
+
+typedef BOOL (NTAPI *PFNREGISTERMESSAGEPUMPHOOK)(
+    _In_ PFNINITMPH InitializeMessagePumpHook
+);
+
+typedef BOOL (NTAPI *PFNUNREGISTERMESSAGEPUMPHOOK)(
+    VOID
+);
+
+NTSYSAPI
+BOOL
+NTAPI
+RegisterMessagePumpHook(
+    _In_ PFNINITMPH InitializeMessagePumpHook
+);
+
+NTSYSAPI
+BOOL
+NTAPI
+UnregisterMessagePumpHook(
+    VOID
+);
+
+typedef enum _LOW_LATENCY_PROFILE_REQUEST_REASON
+{
+    LowLatencyProfileReasonUnknown = 0,
+    LowLatencyProfileReasonGaming = 1,
+    LowLatencyProfileReasonMedia = 2,
+    LowLatencyProfileReasonAudio = 3,
+    LowLatencyProfileReasonMax
+} LOW_LATENCY_PROFILE_REQUEST_REASON;
+
+NTSYSAPI
+LOGICAL
+NTAPI
+RequestLowLatencyProfile(
+    _In_ LUID Luid,
+    _In_ LOW_LATENCY_PROFILE_REQUEST_REASON Reason
+);
+#endif // NTDDI_VERSION >= NTDDI_WIN11
+
 //
 // KernelCallbackTable
 //
 
 typedef _Function_class_(FN_DISPATCH)
 NTSTATUS NTAPI FN_DISPATCH(
-    _In_opt_ PVOID Context
+    _Inout_ PVOID Arguments
 );
 typedef FN_DISPATCH* PFN_DISPATCH;
+
+typedef struct _CAPTUREBUF
+{
+    ULONG Count;
+    ULONG Offset;
+} CAPTUREBUF, * PCAPTUREBUF;
+
+FORCEINLINE
+VOID
+FixupCallbackPointers(
+    _Inout_ PCAPTUREBUF CaptureBuffer
+)
+{
+    PULONG relativeOffsets;
+    ULONG index;
+
+    relativeOffsets = (PULONG)((PCHAR)CaptureBuffer + CaptureBuffer->Offset);
+
+    for (index = 0; index < CaptureBuffer->Count; index++)
+    {
+        PULONG pointerToFixup;
+
+        pointerToFixup = (PULONG)((PCHAR)CaptureBuffer + relativeOffsets[index]);
+        *pointerToFixup += (ULONG)(ULONG_PTR)CaptureBuffer;
+    }
+}
 
 // Peb!KernelCallbackTable = user32.dll!apfnDispatch
 typedef struct _KERNEL_CALLBACK_TABLE

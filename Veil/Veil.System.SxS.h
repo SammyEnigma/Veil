@@ -835,8 +835,10 @@ NtApphelpCacheControl(
     _Inout_opt_ PVOID ServiceContext
 );
 
+_IRQL_requires_max_(PASSIVE_LEVEL)
 NTSYSAPI
 NTSTATUS
+NTAPI
 ZwApphelpCacheControl(
     _In_ AHC_SERVICE_CLASS ServiceClass,
     _Inout_opt_ PVOID ServiceContext // AHC_SERVICE_DATA

@@ -145,6 +145,23 @@ typedef struct _LDRP_DEPENDENCY
     };
 } LDRP_DEPENDENCY, * PLDRP_DEPENDENCY;
 
+// private
+typedef struct _LDRP_DEPENDENCY32
+{
+    SINGLE_LIST_ENTRY32 Link;
+    PLDR_DDAG_NODE32 ChildNode;
+    SINGLE_LIST_ENTRY32 BackLink;
+    union
+    {
+        PLDR_DDAG_NODE32 ParentNode;
+        struct
+        {
+            ULONG ForwarderLink : 1;
+            ULONG SpareFlags : 2;
+        };
+    };
+} LDRP_DEPENDENCY32, * POINTER_32 PLDR_DEPENDENCY32;
+
 // LoadReason
 typedef enum _LDR_DLL_LOAD_REASON
 {

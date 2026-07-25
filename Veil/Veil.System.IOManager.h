@@ -2155,6 +2155,7 @@ NtFlushBuffersFile(
 _IRQL_requires_max_(PASSIVE_LEVEL)
 NTSYSAPI
 NTSTATUS
+NTAPI
 ZwFlushBuffersFile(
     _In_ HANDLE FileHandle,
     _Out_ PIO_STATUS_BLOCK IoStatusBlock
@@ -2262,6 +2263,7 @@ NtFlushBuffersFileEx (
 _IRQL_requires_max_(PASSIVE_LEVEL)
 NTSYSAPI
 NTSTATUS
+NTAPI
 ZwFlushBuffersFileEx(
     _In_ HANDLE FileHandle,
     _In_ ULONG FLags,
@@ -2500,8 +2502,12 @@ NtQueryEaFile(
     _In_ BOOLEAN RestartScan
 );
 
+// The WDK supplies the Zw EA declarations in kernel mode with authoritative import and SAL metadata.
+#ifndef _KERNEL_MODE
 _IRQL_requires_max_(PASSIVE_LEVEL)
+NTSYSAPI
 NTSTATUS
+NTAPI
 ZwQueryEaFile(
     _In_ HANDLE FileHandle,
     _Out_ PIO_STATUS_BLOCK IoStatusBlock,
@@ -2513,6 +2519,7 @@ ZwQueryEaFile(
     _In_opt_ PULONG EaIndex,
     _In_ BOOLEAN RestartScan
 );
+#endif // !_KERNEL_MODE
 
 __kernel_entry NTSYSCALLAPI
 NTSTATUS
@@ -2524,14 +2531,18 @@ NtSetEaFile(
     _In_ ULONG Length
 );
 
+#ifndef _KERNEL_MODE
 _IRQL_requires_max_(PASSIVE_LEVEL)
+NTSYSAPI
 NTSTATUS
+NTAPI
 ZwSetEaFile(
     _In_ HANDLE FileHandle,
     _Out_ PIO_STATUS_BLOCK IoStatusBlock,
     _In_reads_bytes_(Length) PVOID Buffer,
     _In_ ULONG Length
 );
+#endif // !_KERNEL_MODE
 
 __kernel_entry NTSYSCALLAPI
 NTSTATUS
@@ -2942,7 +2953,9 @@ NtCopyFileChunk(
     _In_ ULONG Flags
 );
 
-//_IRQL_requires_max_(PASSIVE_LEVEL)
+// The WDK supplies ZwCopyFileChunk in kernel mode with authoritative import and SAL metadata.
+#ifndef _KERNEL_MODE
+_IRQL_requires_max_(PASSIVE_LEVEL)
 NTSYSAPI
 NTSTATUS
 NTAPI
@@ -2958,6 +2971,7 @@ ZwCopyFileChunk(
     _In_opt_ PULONG DestKey,
     _In_ ULONG Flags
 );
+#endif // !_KERNEL_MODE
 #endif // (NTDDI_VERSION >= NTDDI_WIN11)
 
 #if (NTDDI_VERSION >= NTDDI_WIN11_GA)

@@ -2064,11 +2064,14 @@ LdrSetImplicitPathOptions(
 );
 #endif
 
+// Upstream raises this declaration to PHNT_WINDOWS_10_RS3 (System Informer #2522, guard spelling
+// corrected only in #3005); Veil keeps the Windows 10 baseline guard taken from the original
+// import so the declaration and the IAT hook below stay available on the whole Windows 10 baseline.
 #if (NTDDI_VERSION >= NTDDI_THRESHOLD)
 /**
- * The LdrSetImplicitPathOptions routine sets implicit path options.
+ * The LdrControlFlowGuardEnforced routine checks if Control Flow Guard is enforced.
  *
- * \param [in] ImplicitPathOptions The implicit path options to set.
+ * \return TRUE if Control Flow Guard is enforced, FALSE otherwise.
  */
 NTSYSAPI
 BOOLEAN

@@ -5907,7 +5907,7 @@ typedef struct _BOOT_ENTROPY_SOURCE_NT_RESULT
 // private
 typedef struct _BOOT_ENTROPY_NT_RESULT
 {
-    ULONG maxEntropySources;
+    ULONG MaxEntropySources;
     BOOT_ENTROPY_SOURCE_NT_RESULT EntropySourceResult[10];
     UCHAR SeedBytesForCng[48];
 } BOOT_ENTROPY_NT_RESULT, * PBOOT_ENTROPY_NT_RESULT;
@@ -7848,13 +7848,13 @@ typedef struct _SYSTEM_FIRMWARE_RAMDISK_INFORMATION
 // rev
 typedef struct _SYSTEM_WHEA_IPMI_HARDWARE_INFORMATION
 {
-    ULONGLONG RecordId;
-    UCHAR EventType;
-    UCHAR SensorType;
-    USHORT GeneratorId;
-    UCHAR EvmRevision;
-    UCHAR RecordType;
-    UCHAR Data[4];
+    ULONGLONG RecordId;     // IPMI SEL (System Event Log) record identifier
+    UCHAR EventType;        // IPMI event/reading type code
+    UCHAR SensorType;       // IPMI sensor type (e.g. temperature, voltage, processor)
+    USHORT GeneratorId;     // ID of the entity that logged the event
+    UCHAR EvmRevision;      // Event Message format revision
+    UCHAR RecordType;       // SEL record type (e.g. system event vs OEM)
+    UCHAR Data[4];          // Event-specific data bytes
 } SYSTEM_WHEA_IPMI_HARDWARE_INFORMATION, * PSYSTEM_WHEA_IPMI_HARDWARE_INFORMATION;
 
 // private
@@ -9750,8 +9750,7 @@ NTAPI
 NtInitializeNlsFiles(
     _Out_ PVOID* BaseAddress,
     _Out_ PLCID DefaultLocaleId,
-    _Out_ PLARGE_INTEGER DefaultCasingTableSize,
-    _Out_opt_ PULONG CurrentNLSVersion
+    _Out_opt_ PLARGE_INTEGER DefaultCasingTableSize
 );
 
 _IRQL_requires_max_(PASSIVE_LEVEL)
@@ -9761,8 +9760,7 @@ NTAPI
 ZwInitializeNlsFiles(
     _Out_ PVOID* BaseAddress,
     _Out_ PLCID DefaultLocaleId,
-    _Out_ PLARGE_INTEGER DefaultCasingTableSize,
-    _Out_opt_ PULONG CurrentNLSVersion
+    _Out_opt_ PLARGE_INTEGER DefaultCasingTableSize
 );
 
 __kernel_entry NTSYSCALLAPI
@@ -9771,9 +9769,9 @@ NTAPI
 NtGetNlsSectionPtr(
     _In_ ULONG SectionType,
     _In_ ULONG SectionData,
-    _In_ PVOID ContextData,
-    _Out_ PVOID* SectionPointer,
-    _Out_ PULONG SectionSize
+    _Out_opt_ PVOID* ContextData, // Must be NULL for user-mode callers.
+    _When_(ContextData == NULL, _Out_) _When_(ContextData != NULL, _Out_opt_) PVOID* SectionPointer,
+    _Out_opt_ PSIZE_T SectionSize
 );
 
 _IRQL_requires_max_(PASSIVE_LEVEL)
@@ -9783,9 +9781,9 @@ NTAPI
 ZwGetNlsSectionPtr(
     _In_ ULONG SectionType,
     _In_ ULONG SectionData,
-    _In_ PVOID ContextData,
-    _Out_ PVOID* SectionPointer,
-    _Out_ PULONG SectionSize
+    _Out_opt_ PVOID* ContextData, // Must be NULL for user-mode callers.
+    _When_(ContextData == NULL, _Out_) _When_(ContextData != NULL, _Out_opt_) PVOID* SectionPointer,
+    _Out_opt_ PSIZE_T SectionSize
 );
 
 /**

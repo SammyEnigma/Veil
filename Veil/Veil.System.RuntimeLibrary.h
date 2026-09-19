@@ -2681,29 +2681,60 @@ RtlWakeAddressSingleNoFence(
 // \remarks RCU synchronization is not for general-purpose synchronization.
 // Teb->Rcu is used to store the RCU state.
 
-typedef struct _RTL_RCU_STATE RTL_RCU_STATE, *PRTL_RCU_STATE;
-typedef ULONG_PTR RTL_RCU_COOKIE, *PRTL_RCU_COOKIE;
+// rev
+typedef struct _RTL_RCU_THREAD_ENTRY
+{
+    volatile long long RefCount;
+    ULONG SessionId;
+    ULONG ThreadId;
+    volatile long long ObservedEpoch;
+    struct _RTL_RCU_THREAD_ENTRY* Next;
+} RTL_RCU_THREAD_ENTRY, * PRTL_RCU_THREAD_ENTRY;
+
+// rev
+typedef struct _RTL_RCU_BUCKET_ARRAY
+{
+    ULONG Count;
+    ULONG Reserved;
+    PRTL_RCU_THREAD_ENTRY Slots[ANYSIZE_ARRAY];
+    // struct _RTL_RCU_BUCKET_ARRAY* Next; // after Slots
+} RTL_RCU_BUCKET_ARRAY, * PRTL_RCU_BUCKET_ARRAY;
+
+// rev
+typedef struct _RTL_RCU_STATE
+{
+    struct _RTL_RCU_STATE* Flink;
+    struct _RTL_RCU_STATE* Blink;
+    volatile long long Epoch;
+    RTL_RCU_BUCKET_ARRAY* Buckets;
+    PRTL_RCU_THREAD_ENTRY ThreadListHead;
+    PRTL_RCU_THREAD_ENTRY BucketCache[10];
+    RTL_SRWLOCK Lock;
+    ULONG Options;
+    ULONG ReservedTail;
+} RTL_RCU_STATE, * PRTL_RCU_STATE;
 
 NTSYSAPI
 PRTL_RCU_STATE
 NTAPI
 RtlRcuAllocate(
-    _In_ ULONG Flags
-);
-
-NTSYSAPI
-LOGICAL
-NTAPI
-RtlRcuFree(
-    _In_ PRTL_RCU_STATE State
+    _In_ ULONG Options
 );
 
 NTSYSAPI
 VOID
 NTAPI
+RtlRcuFree(
+    _In_ PRTL_RCU_STATE State
+);
+
+// Note: ThreadData can be NULL when it falls back to SRW share-lock.
+NTSYSAPI
+VOID
+NTAPI
 RtlRcuReadLock(
     _Inout_ PRTL_RCU_STATE State,
-    _Out_ PRTL_RCU_COOKIE Cookie
+    _Outptr_result_maybenull_ PRTL_RCU_THREAD_ENTRY* ThreadData
 );
 
 NTSYSAPI
@@ -2711,11 +2742,11 @@ VOID
 NTAPI
 RtlRcuReadUnlock(
     _Inout_ PRTL_RCU_STATE State,
-    _Inout_ PRTL_RCU_COOKIE Cookie
+    _In_ PRTL_RCU_THREAD_ENTRY* ThreadData
 );
 
 NTSYSAPI
-LONG
+VOID
 NTAPI
 RtlRcuSynchronize(
     _Inout_ PRTL_RCU_STATE State
@@ -4817,7 +4848,7 @@ NTAPI
 RtlGetLocaleFileMappingAddress(
     _Out_ PVOID* BaseAddress,
     _Out_ PLCID DefaultLocaleId,
-    _Out_ PLARGE_INTEGER DefaultCasingTableSize
+    _Out_opt_ PLARGE_INTEGER DefaultCasingTableSize
 );
 
 // _KERNEL_MODE end
@@ -7059,6 +7090,46 @@ RtlIsZeroMemory(
     _In_ SIZE_T Length
 );
 #endif // NTDDI_VERSION >= NTDDI_WIN10_VB
+
+FORCEINLINE
+BOOLEAN
+NTAPI
+RtlIsZeroMemory(
+    _In_ PVOID Buffer,
+    _In_ SIZE_T Length
+    )
+{
+    PCHAR buffer = (PCHAR)Buffer;
+
+    while (((ULONG_PTR)buffer & 7) != 0 && Length != 0)
+    {
+        if (*buffer != 0)
+            return FALSE;
+
+        buffer++;
+        Length--;
+    }
+
+    while (Length >= sizeof(ULONG64))
+    {
+        if (*(PULONG64)buffer != 0)
+            return FALSE;
+
+        buffer += sizeof(ULONG64);
+        Length -= sizeof(ULONG64);
+    }
+
+    while (Length != 0)
+    {
+        if (*buffer != 0)
+            return FALSE;
+
+        buffer++;
+        Length--;
+    }
+
+    return TRUE;
+}
 
 NTSYSAPI
 ULONG

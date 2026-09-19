@@ -55,7 +55,7 @@ Replace all `PHNT_*` macros with Veil equivalents:
 | phnt Macro | Veil Macro |
 |---|---|
 | `PHNT_VERSION` | `NTDDI_VERSION` |
-| `PHNT_WINDOWS_OLDEST` | `NTDDI_WIN2K` |
+| `PHNT_WINDOWS_ANCIENT` | `NTDDI_WIN2K` |
 | `PHNT_WINDOWS_XP` | `NTDDI_WINXP` |
 | `PHNT_WINDOWS_SERVER_2003` | `NTDDI_WS03` |
 | `PHNT_WINDOWS_VISTA` | `NTDDI_VISTA` |
@@ -80,7 +80,10 @@ Replace all `PHNT_*` macros with Veil equivalents:
 | `PHNT_WINDOWS_11_22H2` | `NTDDI_WIN11_NI` |
 | `PHNT_WINDOWS_11_23H2` | `NTDDI_WIN11_NI` |
 | `PHNT_WINDOWS_11_24H2` | `NTDDI_WIN11_GE` |
-| `PHNT_WINDOWS_NEW` | `NTDDI_WIN11_BR` |
+| `PHNT_WINDOWS_11_25H2` | `NTDDI_WIN11_DT` |
+| `PHNT_WINDOWS_11_26H1` | `NTDDI_WIN11_BR` |
+| `PHNT_WINDOWS_11_27H2` | Blocked; no Veil constant exists for that release |
+| `PHNT_WINDOWS_NEW` | Sentinel; keep the comparison as written, do not convert to a fixed `NTDDI_*` value |
 
 **Example:**
 ```cpp
@@ -172,6 +175,8 @@ Fix compilation errors before proceeding to the next file.
 | `ntpoapi.h` | `Veil/Veil.System.PowerManager.h` |
 | `ntpfapi.h` | `Veil/Veil.System.Prefetcher.h` |
 | `ntpsapi.h` | `Veil/Veil.System.Process.h` |
+| `ntpebteb.h` | `Veil/Veil.System.Process.h` (PEB, PEB32, TEB, TEB32) |
+| `ntxcapi.h` | `Veil/Veil.System.Process.h` (NtContinue family), `Veil/Veil.System.RuntimeLibrary.h` (Rtl exception support) |
 | `ntrtl.h` | `Veil/Veil.System.RuntimeLibrary.h` |
 | `ntsam.h` | `Veil/Veil.System.SAM.h` |
 | `ntseapi.h` | `Veil/Veil.System.Security.h` |
@@ -179,7 +184,7 @@ Fix compilation errors before proceeding to the next file.
 | `ntsxs.h` | `Veil/Veil.System.SxS.h` |
 | `nttp.h` | `Veil/Veil.System.ThreadPool.h` |
 | `nttmapi.h` | `Veil/Veil.System.TransactionManager.h` |
-| `ntmisc.h` | `Veil/Veil.System.AppPackage.h` (Package APIs only) |
+| `ntmisc.h` | Multi-domain: classify every changed section by symbol ownership (Package APIs → `Veil/Veil.System.AppPackage.h`, PCW performance counters → `Veil/Veil.System.Etw.h`) |
 
 **Unmapped** (skip): `nttypesafe.h`, `ntstrsafe.h`, `ntintsafe.h`, `ntd3dkmt.h`
 

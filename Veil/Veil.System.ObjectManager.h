@@ -154,6 +154,32 @@ typedef struct _OBJECT_HANDLE_FLAG_INFORMATION
     BOOLEAN ProtectFromClose;
 } OBJECT_HANDLE_FLAG_INFORMATION, * POBJECT_HANDLE_FLAG_INFORMATION;
 
+#if (NTDDI_VERSION >= NTDDI_WIN11_DT)
+/**
+ * Controls runtime object reference-count tracing in the kernel Object Manager.
+ *
+ * Used with NtSetInformationObject(ObjectSetRefTraceInformation) to start or stop per-object
+ * stack-capture tracing (ObfReferenceObject / ObfDereferenceObject). Requires SeDebugPrivilege.
+ * The captured stacks land in the kernel's ObpStackTable / ObpObjectTable and are accessible
+ * via the !obtrace WinDbg extension and the Object Reference Tracing verifier feature.
+ *
+ * Used with NtQueryObject(ObjectSetRefTraceInformation) to read back the current trace
+ * configuration (whether tracing is active, the ETW mode flag, and the active filters).
+ *
+ * \remarks Minimum buffer size is sizeof(OBJECT_SET_REF_TRACE_INFORMATION) = 40 bytes.
+ * ProcessName and PoolTags are optional filters; set Length=0/Buffer=NULL to trace all objects.
+ * PoolTags is a semicolon-separated list of 4-character pool tags, e.g. L"ObTr;File" (max 16 tags).
+ */
+typedef struct _OBJECT_SET_REF_TRACE_INFORMATION
+{
+    BOOLEAN Enable;              // TRUE = start tracing, FALSE = stop tracing
+    BOOLEAN EtwMode;             // TRUE = also emit reference events via ETW
+    UCHAR Reserved[6];           // reserved, must be zero
+    UNICODE_STRING ProcessName;  // optional: restrict tracing to objects owned by this process name
+    UNICODE_STRING PoolTags;     // optional: restrict tracing to objects with these pool tags (semicolon-delimited, e.g. L"ObTr;File")
+} OBJECT_SET_REF_TRACE_INFORMATION, * POBJECT_SET_REF_TRACE_INFORMATION;
+#endif // NTDDI_VERSION >= NTDDI_WIN11_DT
+
 //
 // Objects, handles
 //

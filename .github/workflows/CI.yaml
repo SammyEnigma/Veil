@@ -22,6 +22,11 @@ jobs:
     # The type of runner that the job will run on
     runs-on: windows-latest
 
+    # contents: checkout and GitHub release; id-token: NuGet trusted publishing (OIDC)
+    permissions:
+      contents: write
+      id-token: write
+
     # Any commit that contains [build] will now trigger these jobs, everything else will be skipped.
     # if: "contains(github.event.head_commit.message, '[build]')"
 
@@ -75,11 +80,19 @@ jobs:
           )
           if %ERRORLEVEL% NEQ 0 exit /B %ERRORLEVEL%
 
+      - name: NuGet login
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: NuGet/login@v1
+        id: login
+        with:
+          # nuget.org profile name, not the email address
+          user: ${{ secrets.NUGET_USER }}
+
       - name: Publish NuGet
         if: startsWith(github.ref, 'refs/tags/v')
         shell: cmd
         run: |
-          NuGet push Musa.Veil.${{ env.BuildVersion }}.nupkg -ApiKey ${{ secrets.NUGET_TOKEN }} -Source https://api.nuget.org/v3/index.json
+          NuGet push Musa.Veil.${{ env.BuildVersion }}.nupkg -ApiKey ${{ steps.login.outputs.NUGET_API_KEY }} -Source https://api.nuget.org/v3/index.json
           if %ERRORLEVEL% NEQ 0 exit /B %ERRORLEVEL%
 
       - name: Publish
